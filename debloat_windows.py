@@ -76,6 +76,9 @@ def apply_registry_changes():
             print("Taskbar alignment set.")
         except PermissionError:
             print("Error: Unable to modify Taskbar alignment.")
+        except Exception as e:
+            print(f"Unexpected error while modifying Taskbar alignment: {e}")
+
         accent_key_path = r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent"
         black_palette = bytes([0x00] * 32)
         try:
@@ -86,6 +89,9 @@ def apply_registry_changes():
             print("Accent color settings applied.")
         except PermissionError:
             print("Error: Unable to modify Accent settings.")
+        except Exception as e:
+            print(f"Unexpected error while modifying Accent settings: {e}")
+
         themes_key_path = r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"
         try:
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, themes_key_path, 0, winreg.KEY_SET_VALUE) as key:
@@ -95,6 +101,9 @@ def apply_registry_changes():
             print("Light theme and accent color settings applied.")
         except PermissionError:
             print("Error: Unable to modify light theme or accent color settings.")
+        except Exception as e:
+            print(f"Unexpected error while modifying light theme or accent color settings: {e}")
+
         taskbar_pinned_path = r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Taskband"
         try:
             winreg.DeleteKey(winreg.HKEY_CURRENT_USER, taskbar_pinned_path)
@@ -103,6 +112,9 @@ def apply_registry_changes():
             print("No Taskbar icons to clear.")
         except PermissionError:
             print("Error: Unable to clear Taskbar icons.")
+        except Exception as e:
+            print(f"Unexpected error while clearing Taskbar icons: {e}")
+
         start_menu_paths = [
             os.path.expandvars(r"%AppData%\Microsoft\Windows\Start Menu\Programs"),
             r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
@@ -119,6 +131,7 @@ def apply_registry_changes():
                         print(f"Removed Start Menu item: {item}")
                     except Exception as e:
                         print(f"Error removing Start Menu item {item}: {e}")
+
         print("Taskbar and Start Menu cleared.")
         run_applybackground()
 
