@@ -1,42 +1,46 @@
 import sys
 import os
 import ctypes
+import subprocess
+import threading
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QThread
 from browser_select_screen import BrowserSelectScreen
 from defender_check import DefenderCheck
 from raven_app_screen import RavenAppScreen
 from install_screen import InstallScreen
-import subprocess
-from debloat_windows import apply_registry_changes
+import debloat_windows
 import raven_software_install
 import browser_install
 
 def is_running_as_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except Exception:
+    except Exception as e:
+        print(f"Error checking admin privileges: {e}")
         return False
 
 def restart_system():
     print("Restarting system...")
-    subprocess.call(["shutdown", "/r", "/f", "/t", "0"])
+    try:
+        subprocess.call(["shutdown", "/r", "/f", "/t", "0"])
+    except Exception as e:
+        print(f"Failed to restart system: {e}")
 
 def restart_as_admin():
-    script = sys.argv[0]
-    params = ' '.join(sys.argv[1:])
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{script}" {params}', None, 1)
+    try:
+        script = sys.argv[0]
+        params = ' '.join(sys.argv[1:])
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{script}" {params}', None, 1)
+        sys.exit()
+    except Exception as e:
+        print(f"Error restarting as admin: {e}")
 
 def main():
     app = QApplication(sys.argv)
 
-    try:
-        if not is_running_as_admin():
-            print("This program requires administrator privileges. Restarting with admin rights...")
-            restart_as_admin()
-            sys.exit()
-    except Exception as e:
-        print(f"Error checking admin privileges: {e}")
+    if not is_running_as_admin():
+        print("This program requires administrator privileges. Restarting with admin rights...")
+        restart_as_admin()
 
     try:
         defender_check_window = DefenderCheck()
@@ -81,28 +85,40 @@ def main():
     except Exception as e:
         print(f"Error during installation screen setup: {e}")
 
-    def on_installation_complete():
+    def perform_installation():
         try:
-            print("Optionally installing Raven software...")
-            if install_raven:
-                raven_software_install.main()
-            print("Installing selected browser...")
-            browser_install.install_browser(selected_browser)
-            print("All installations and configurations completed.")
+            print("Applying Windows registry modifications and customizations...")
+            debloat_windows.apply_registry_changes()
+            print("Debloat and customization complete.")
         except Exception as e:
-            print(f"Error during installation: {e}")
-        finally:
-            install_screen.close()
-            restart_system()
+            print(f"Error applying registry changes: {e}")
+
+        try:
+            if install_raven:
+                print("Installing Raven software...")
+                raven_software_install.main()
+                print("Raven software installed.")
+        except Exception as e:
+            print(f"Error during Raven software installation: {e}")
+
+        try:
+            print(f"Installing {selected_browser} browser...")
+            browser_install.install_browser(selected_browser)
+            print(f"{selected_browser} browser installation complete.")
+        except Exception as e:
+            print(f"Error during browser installation: {e}")
+
+        print("All installations and configurations completed.")
+        install_screen.close()
+
+        restart_system()
 
     try:
-        debloat_thread = QThread()
-        debloat_worker = lambda: apply_registry_changes()
-        debloat_thread.run = debloat_worker
-        debloat_thread.finished.connect(on_installation_complete)
-        debloat_thread.start()
+        install_thread = threading.Thread(target=perform_installation)
+        install_thread.start()
+        install_thread.join()
     except Exception as e:
-        print(f"Error starting debloat thread: {e}")
+        print(f"Error starting installation thread: {e}")
 
     app.exec_()
 
