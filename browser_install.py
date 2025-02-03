@@ -13,7 +13,10 @@ def install_browser(selected_browser):
     browser_id = browser_map[selected_browser]
     print(f"Installing {selected_browser} via Winget...")
     try:
-        subprocess.run(["winget", "install", browser_id, "--silent"], check=True)
+        subprocess.run(
+            ["winget", "install", browser_id, "--silent", "--accept-package-agreements", "--accept-source-agreements"],
+            check=True
+        )
         print(f"{selected_browser} installation completed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {selected_browser}: {e}")

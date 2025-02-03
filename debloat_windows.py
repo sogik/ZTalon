@@ -8,6 +8,18 @@ import winreg
 import shutil
 import threading
 import time
+import logging
+
+LOG_FILE = "talon.txt"
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
+def log(message):
+    logging.info(message)
+    print(message)
 
 def is_admin():
     try:
@@ -36,22 +48,22 @@ class InstallationWorker(threading.Thread):
 
             for attempt in range(3):
                 try:
-                    print(f"Downloading {self.exe_name} (Attempt {attempt + 1}/3)...")
+                    log(f"Downloading {self.exe_name} (Attempt {attempt + 1}/3)...")
                     response = requests.get(self.url, stream=True, timeout=10)
                     if response.status_code == 200:
                         with open(exe_path, "wb") as file:
                             for chunk in response.iter_content(chunk_size=8192):
                                 file.write(chunk)
-                        print(f"Download complete: {exe_path}")
+                        log(f"Download complete: {exe_path}")
                         break
                 except Exception as e:
-                    print(f"Download failed: {e}")
+                    log(f"Download failed: {e}")
                     time.sleep(3)
             else:
-                print(f"Failed to download {self.exe_name} after multiple attempts.")
+                log(f"Failed to download {self.exe_name} after multiple attempts.")
                 return
 
-            print(f"Running {self.exe_name}...")
+            log(f"Running {self.exe_name}...")
             process = subprocess.Popen(
                 [exe_path, *self.args],
                 stdout=subprocess.PIPE,
@@ -59,74 +71,52 @@ class InstallationWorker(threading.Thread):
                 text=True
             )
             for line in process.stdout:
-                print(line.strip())
+                log(line.strip())
+                if self.exe_name == "cttwinutil.exe" and "Tweaks are finished" in line:
+                    log("CTT WinUtil process detected completion. Terminating applyprofile.exe.")
+                    subprocess.run(["taskkill", "/F", "/IM", "applyprofile.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             process.wait()
             if process.returncode != 0:
-                print(f"Error running {self.exe_name}: {process.stderr.read()}")
+                log(f"Error running {self.exe_name}: {process.stderr.read()}")
 
-            print(f"{self.exe_name} installation complete.")
+            log(f"{self.exe_name} installation complete.")
 
             if self.callback:
                 self.callback()
 
         except Exception as e:
-            print(f"Error: {e}")
+            log(f"Error: {e}")
 
 def apply_registry_changes():
-    print("Applying registry changes...")
+    log("Applying registry changes...")
     try:
         registry_modifications = [
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarAl", winreg.REG_DWORD, 0),
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent", "AccentColorMenu", winreg.REG_DWORD, 0),
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent", "StartColorMenu", winreg.REG_DWORD, 0),
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Themes\Personalize", "AppsUseLightTheme", winreg.REG_DWORD, 0),
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Themes\Personalize", "SystemUsesLightTheme", winreg.REG_DWORD, 0),
-            (r"Software\Microsoft\Windows\CurrentVersion\Explorer\Themes\Personalize", "ColorPrevalence", winreg.REG_DWORD, 1)
+            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "TaskbarAl", winreg.REG_DWORD, 0),
+            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "AppsUseLightTheme", winreg.REG_DWORD, 0),
+            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "SystemUsesLightTheme", winreg.REG_DWORD, 0),
+            (r"Software\\Microsoft\\Windows\\DWM", "ColorPrevalence", winreg.REG_DWORD, 1),
+            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentPalette", winreg.REG_BINARY, b"\x00" * 32),
         ]
 
         for key_path, value_name, value_type, value in registry_modifications:
             try:
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, value_name, 0, value_type, value)
-                print(f"Applied {value_name} to {key_path}")
+                log(f"Applied {value_name} to {key_path}")
             except Exception as e:
-                print(f"Failed to modify {value_name} in {key_path}: {e}")
+                log(f"Failed to modify {value_name} in {key_path}: {e}")
 
-        taskbar_pinned_path = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband"
-        try:
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, taskbar_pinned_path)
-            print("Taskbar icons cleared.")
-        except FileNotFoundError:
-            print("No taskbar icons to clear.")
-
-        start_menu_paths = [
-            os.path.expandvars(r"%AppData%\Microsoft\Windows\Start Menu\Programs"),
-            r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
-        ]
-        for start_menu_path in start_menu_paths:
-            if os.path.exists(start_menu_path):
-                for item in os.listdir(start_menu_path):
-                    item_path = os.path.join(start_menu_path, item)
-                    try:
-                        if os.path.isfile(item_path) or os.path.islink(item_path):
-                            os.remove(item_path)
-                        elif os.path.isdir(item_path):
-                            shutil.rmtree(item_path)
-                        print(f"Removed Start Menu item: {item}")
-                    except Exception as e:
-                        print(f"Error removing Start Menu item {item}: {e}")
-
-        print("Taskbar and Start Menu cleared.")
+        log("Registry changes applied successfully.")
 
         subprocess.run(["taskkill", "/F", "/IM", "explorer.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["start", "explorer.exe"], shell=True)
-        print("Explorer restarted to apply registry changes.")
+        log("Explorer restarted to apply registry changes.")
 
         run_applybackground()
 
     except Exception as e:
-        print(f"Error applying registry changes: {e}")
+        log(f"Error applying registry changes: {e}")
 
 def run_applybackground():
     print("Running background application setup...")
@@ -138,7 +128,7 @@ def run_applybackground():
     worker.start()
 
 def run_winconfig():
-    print("Running Windows configuration script...")
+    log("Running Windows configuration script...")
     try:
         script_url = "https://win11debloat.raphi.re/"
         temp_dir = tempfile.gettempdir()
@@ -148,7 +138,7 @@ def run_winconfig():
         with open(script_path, "wb") as file:
             file.write(response.content)
 
-        print("Windows configuration script downloaded.")
+        log("Windows configuration script downloaded.")
 
         powershell_command = (
             f"Set-ExecutionPolicy Bypass -Scope Process -Force; "
@@ -157,38 +147,34 @@ def run_winconfig():
             f"-TaskbarAlignLeft -HideSearchTb -DisableWidgets -DisableCopilot -ExplorerToThisPC"
         )
 
-        process = subprocess.Popen(
-            ["powershell", "-Command", powershell_command],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        for line in process.stdout:
-            print(line.strip())
-
-        process.wait()
-        if process.returncode != 0:
-            print(f"Error: {process.stderr.read()}")
-        else:
-            print("Windows configuration applied successfully.")
-            run_applyprofile()
-
+        subprocess.run(["powershell", "-Command", powershell_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log("Windows configuration applied successfully.")
+        run_edge_vanisher()
     except Exception as e:
-        print(f"Error running PowerShell script: {e}")
+        log(f"Error running PowerShell script: {e}")
 
-def run_applyprofile():
-    print("Running profile-specific application setup...")
-    worker = InstallationWorker(
-        "applyprofile.exe",
-        "https://github.com/ravendevteam/talon-applyprofile/releases/download/v1.0.0/applyprofile.exe",
-        args=["--barebones"],
-        callback=finalize_installation
-    )
-    worker.start()
+def run_edge_vanisher():
+    log("Running Edge Vanisher script...")
+    try:
+        script_url = "https://raw.githubusercontent.com/ravendevteam/talon-blockedge/refs/heads/main/edge_vanisher.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "edge_vanisher.ps1")
+
+        response = requests.get(script_url)
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+
+        log("Edge Vanisher script downloaded.")
+
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        subprocess.run(["powershell", "-Command", powershell_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log("Edge Vanisher applied successfully.")
+    except Exception as e:
+        log(f"Error running Edge Vanisher script: {e}")
 
 def finalize_installation():
-    print("Installation complete.")
+    log("Installation complete. Restarting system...")
+    subprocess.run(["shutdown", "/r", "/t", "10"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 if __name__ == "__main__":
     apply_registry_changes()

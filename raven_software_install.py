@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-import urllib.request
+import requests
 
 def get_script_dir():
     if getattr(sys, 'frozen', False):
@@ -12,16 +12,32 @@ def get_script_dir():
 def download_toolbox(destination):
     url = "https://github.com/ravendevteam/toolbox/releases/latest/download/toolbox.exe"
     print(f"Downloading Toolbox from {url} to {destination}")
-    urllib.request.urlretrieve(url, destination)
+    try:
+        response = requests.get(url, stream=True, verify=True)
+        response.raise_for_status()
+        
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Download completed successfully to {destination}")
+    except requests.exceptions.SSLError as ssl_err:
+        print(f"SSL certificate error: {ssl_err}")
+        sys.exit(1)
+    except requests.exceptions.RequestException as req_err:
+        print(f"Error downloading Toolbox: {req_err}")
+        sys.exit(1)
 
 def run_toolbox(exe_path):
     print("Running Toolbox installation...")
-    process = subprocess.run([exe_path, "install", "*", "--yes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if process.returncode == 0:
-        print("Toolbox installation completed successfully.")
-    else:
-        print("Toolbox installation encountered an issue:")
-        print(process.stderr.decode())
+    try:
+        process = subprocess.run([exe_path, "install", "*", "--yes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode == 0:
+            print("Toolbox installation completed successfully.")
+        else:
+            print(f"Toolbox installation encountered an issue: {process.stderr.decode()}")
+            sys.exit(1)
+    except Exception as e:
+        print(f"Failed to run Toolbox: {e}")
         sys.exit(1)
 
 def cleanup_toolbox(exe_path):
