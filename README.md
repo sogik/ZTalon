@@ -9,7 +9,7 @@
 
 Simple utility to debloat Windows in a few clicks.
 
-Made for Windows 10/11.
+Made for Windows 10.
 
 ## Installation
 See [Releases](https://github.com/ravendevteam/talon/releases). Download the latest version for Windows.
