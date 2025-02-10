@@ -69,7 +69,8 @@ class BrowserSelectScreen(QWidget):
             base_path = sys._MEIPASS
         else:
             base_path = os.path.dirname(os.path.abspath(__file__))
-        pixmap = QPixmap(base_path, "browser_selection.png")
+        image_path = os.path.join(base_path, "browser_selection.png")
+        pixmap = QPixmap(image_path)
         scaled_pixmap = pixmap.scaledToWidth(int(1920 * 0.6), Qt.SmoothTransformation)
         image_label.setPixmap(scaled_pixmap)
         image_label.setAlignment(Qt.AlignCenter)
