@@ -98,7 +98,7 @@ def apply_registry_changes():
             (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdates", winreg.REG_DWORD, 1), # Enables the delay of security updates
             (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdatesPeriodInDays", winreg.REG_DWORD, 4), # Sets delay of security updates for 4 days
             (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVerion", winreg.REG_DWORD, 1), # Enables the target release version policy
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVersionInfo", winreg.REG_SZ, "24H2") # Sets the target release version to 24H2
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVersionInfo", winreg.REG_SZ, "24H2"), # Sets the target release version to 24H2
             (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "ProductVersion", winreg.REG_SZ, "Windows 11") # Sets the product version to Windows 11
         ]
         for root_key, key_path, value_name, value_type, value in registry_modifications:
@@ -112,9 +112,7 @@ def apply_registry_changes():
         subprocess.run(["taskkill", "/F", "/IM", "explorer.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["start", "explorer.exe"], shell=True)
         log("Explorer restarted to apply registry changes.")
-
         run_applybackground()
-
     except Exception as e:
         log(f"Error applying registry changes: {e}")
 
