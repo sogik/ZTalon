@@ -129,7 +129,6 @@ def main():
         logging.info("Starting installation process in a separate thread...")
         install_thread = threading.Thread(target=perform_installation)
         install_thread.start()
-        install_thread.join()
     except Exception as e:
         logging.error(f"Error starting installation thread: {e}")
 

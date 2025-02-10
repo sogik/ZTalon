@@ -62,7 +62,6 @@ class InstallationWorker(threading.Thread):
             else:
                 log(f"Failed to download {self.exe_name} after multiple attempts.")
                 return
-
             log(f"Running {self.exe_name}...")
             process = subprocess.Popen(
                 [exe_path, *self.args],
@@ -75,13 +74,10 @@ class InstallationWorker(threading.Thread):
                 if self.exe_name == "cttwinutil.exe" and "Tweaks are finished" in line:
                     log("CTT WinUtil process detected completion. Terminating applyprofile.exe.")
                     subprocess.run(["taskkill", "/F", "/IM", "applyprofile.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
             process.wait()
             if process.returncode != 0:
                 log(f"Error running {self.exe_name}: {process.stderr.read()}")
-
             log(f"{self.exe_name} installation complete.")
-
             if self.callback:
                 self.callback()
 
@@ -92,23 +88,27 @@ def apply_registry_changes():
     log("Applying registry changes...")
     try:
         registry_modifications = [
-            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "TaskbarAl", winreg.REG_DWORD, 0),
-            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "AppsUseLightTheme", winreg.REG_DWORD, 0),
-            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "SystemUsesLightTheme", winreg.REG_DWORD, 0),
-            (r"Software\\Microsoft\\Windows\\DWM", "ColorPrevalence", winreg.REG_DWORD, 1),
-            (r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentPalette", winreg.REG_BINARY, b"\x00" * 32),
+            # Visual changes
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "TaskbarAl", winreg.REG_DWORD, 0), # Align taskbar to the left
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "AppsUseLightTheme", winreg.REG_DWORD, 0), # Set Windows to dark theme
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "SystemUsesLightTheme", winreg.REG_DWORD, 0), # Set Windows to dark theme
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentColorMenu", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentPalette", winreg.REG_BINARY, b"\x00" * 32), # Makes the taskbar black
+            # Below are registry changes for disabling "feature" (bloat) updates
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdates", winreg.REG_DWORD, 1), # Enables the delay of security updates
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdatesPeriodInDays", winreg.REG_DWORD, 4), # Sets delay of security updates for 4 days
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVerion", winreg.REG_DWORD, 1), # Enables the target release version policy
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVersionInfo", winreg.REG_SZ, "24H2") # Sets the target release version to 24H2
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "ProductVersion", winreg.REG_SZ, "Windows 11") # Sets the product version to Windows 11
         ]
-
-        for key_path, value_name, value_type, value in registry_modifications:
+        for root_key, key_path, value_name, value_type, value in registry_modifications:
             try:
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                with winreg.OpenKey(root_key, key_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, value_name, 0, value_type, value)
                 log(f"Applied {value_name} to {key_path}")
             except Exception as e:
                 log(f"Failed to modify {value_name} in {key_path}: {e}")
-
         log("Registry changes applied successfully.")
-
         subprocess.run(["taskkill", "/F", "/IM", "explorer.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["start", "explorer.exe"], shell=True)
         log("Explorer restarted to apply registry changes.")
@@ -133,20 +133,16 @@ def run_winconfig():
         script_url = "https://win11debloat.raphi.re/"
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "Win11Debloat.ps1")
-
         response = requests.get(script_url)
         with open(script_path, "wb") as file:
             file.write(response.content)
-
         log("Windows configuration script downloaded.")
-
         powershell_command = (
             f"Set-ExecutionPolicy Bypass -Scope Process -Force; "
             f"& '{script_path}' -Silent -RemoveApps -RemoveGamingApps -DisableTelemetry "
             f"-DisableBing -DisableSuggestions -DisableLockscreenTips -RevertContextMenu "
             f"-TaskbarAlignLeft -HideSearchTb -DisableWidgets -DisableCopilot -ExplorerToThisPC"
         )
-
         subprocess.run(["powershell", "-Command", powershell_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         log("Windows configuration applied successfully.")
         run_edge_vanisher()
@@ -159,18 +155,32 @@ def run_edge_vanisher():
         script_url = "https://raw.githubusercontent.com/ravendevteam/talon-blockedge/refs/heads/main/edge_vanisher.ps1"
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "edge_vanisher.ps1")
-
         response = requests.get(script_url)
         with open(script_path, "wb") as file:
             file.write(response.content)
-
         log("Edge Vanisher script downloaded.")
-
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         subprocess.run(["powershell", "-Command", powershell_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         log("Edge Vanisher applied successfully.")
+        run_oouninstall()
     except Exception as e:
         log(f"Error running Edge Vanisher script: {e}")
+
+def run_oouninstall():
+    log("Running OOUninstall script...")
+    try:
+        script_url = "https://raw.githubusercontent.com/ravendevteam/oouninstaller/refs/heads/main/uninstall_oo.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "uninstall_oo.ps1")
+        response = requests.get(script_url)
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("OOUninstall script downloaded.")
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        subprocess.run(["powershell", "-Command", powershell_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log("OOUninstall applied successfully.")
+    except Exception as e:
+        log(f"Error running OOUninstall script: {e}")
 
 def finalize_installation():
     log("Installation complete. Restarting system...")
