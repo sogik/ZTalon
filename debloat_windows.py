@@ -290,25 +290,55 @@ def run_winconfig():
         if process.returncode == 0:
             log("Windows configuration completed successfully")
             log(f"Process stdout: {process.stdout}")
-            run_updatepolicychanger()
+            log("Preparing to transition to UpdatePolicyChanger...")
+            try:
+                log("Initiating UpdatePolicyChanger process...")
+                run_updatepolicychanger()
+            except Exception as e:
+                log(f"Failed to start UpdatePolicyChanger: {e}")
+                log("Attempting to continue with installation despite UpdatePolicyChanger failure")
+                run_updatepolicychanger()
         else:
             log(f"Windows configuration failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
-            run_updatepolicychanger()
+            log("Attempting to continue with UpdatePolicyChanger despite WinConfig failure")
+            try:
+                log("Initiating UpdatePolicyChanger after WinConfig failure...")
+                run_updatepolicychanger()
+            except Exception as e:
+                log(f"Failed to start UpdatePolicyChanger after WinConfig failure: {e}")
+                log("Proceeding to finalize installation...")
+                run_updatepolicychanger()
             
     except requests.exceptions.RequestException as e:
         log(f"Network error during Windows configuration script download: {str(e)}")
-        run_updatepolicychanger()
+        log("Attempting to continue with UpdatePolicyChanger despite network error")
+        try:
+            run_updatepolicychanger()
+        except Exception as inner_e:
+            log(f"Failed to start UpdatePolicyChanger after network error: {inner_e}")
+            run_updatepolicychanger()
     except IOError as e:
         log(f"File I/O error while saving Windows configuration script: {str(e)}")
-        run_updatepolicychanger()
+        log("Attempting to continue with UpdatePolicyChanger despite I/O error")
+        try:
+            run_updatepolicychanger()
+        except Exception as inner_e:
+            log(f"Failed to start UpdatePolicyChanger after I/O error: {inner_e}")
+            run_updatepolicychanger()
     except Exception as e:
         log(f"Unexpected error during Windows configuration: {str(e)}")
-        run_updatepolicychanger()
+        log("Attempting to continue with UpdatePolicyChanger despite unexpected error")
+        try:
+            run_updatepolicychanger()
+        except Exception as inner_e:
+            log(f"Failed to start UpdatePolicyChanger after unexpected error: {inner_e}")
+            run_updatepolicychanger()
 
 def run_updatepolicychanger():
     log("Starting UpdatePolicyChanger script execution...")
+    log("Checking system state before UpdatePolicyChanger execution...")
     try:
         script_url = "https://raw.githubusercontent.com/ravendevteam/talon-updatepolicy/refs/heads/main/UpdatePolicyChanger.ps1"
         temp_dir = tempfile.gettempdir()
@@ -316,43 +346,78 @@ def run_updatepolicychanger():
         log(f"Attempting to download UpdatePolicyChanger script from: {script_url}")
         log(f"Target script path: {script_path}")
         
-        response = requests.get(script_url)
-        log(f"Download response status code: {response.status_code}")
+        try:
+            response = requests.get(script_url)
+            log(f"Download response status code: {response.status_code}")
+            log(f"Response headers: {response.headers}")
+            
+            if response.status_code != 200:
+                log(f"Unexpected status code: {response.status_code}")
+                raise requests.exceptions.RequestException(f"Failed to download: Status code {response.status_code}")
+                
+            content_length = len(response.content)
+            log(f"Downloaded content length: {content_length} bytes")
+            
+            with open(script_path, "wb") as file:
+                file.write(response.content)
+            log("UpdatePolicyChanger script successfully saved to disk")
+            log(f"Verifying file exists at {script_path}")
+            
+            if not os.path.exists(script_path):
+                raise IOError("Script file not found after saving")
+            
+            file_size = os.path.getsize(script_path)
+            log(f"Saved file size: {file_size} bytes")
+            
+        except requests.exceptions.RequestException as e:
+            log(f"Network error during script download: {e}")
+            raise
         
-        with open(script_path, "wb") as file:
-            file.write(response.content)
-        log("UpdatePolicyChanger script successfully saved to disk")
-        
+        log("Preparing PowerShell command execution...")
         powershell_command = (
             f"Set-ExecutionPolicy Bypass -Scope Process -Force; "
             f"& '{script_path}'; exit" 
         )
-        log(f"Executing PowerShell command: {powershell_command}")
+        log(f"PowerShell command prepared: {powershell_command}")
         
-        process = subprocess.run(
-            ["powershell", "-Command", powershell_command],
-            capture_output=True,
-            text=True
-        )
-        
-        if process.returncode == 0:
-            log("UpdatePolicyChanger execution completed successfully")
-            log(f"Process output: {process.stdout}")
+        try:
+            log("Executing PowerShell command...")
+            process = subprocess.run(
+                ["powershell", "-Command", powershell_command],
+                capture_output=True,
+                text=True,
+            )
+            
+            log(f"PowerShell process completed with return code: {process.returncode}")
+            log(f"Process stdout length: {len(process.stdout)}")
+            log(f"Process stderr length: {len(process.stderr)}")
+            
+            if process.stdout:
+                log(f"Process output: {process.stdout}")
+            if process.stderr:
+                log(f"Process errors: {process.stderr}")
+            
+            if process.returncode == 0:
+                log("UpdatePolicyChanger execution completed successfully")
+                log("Preparing to finalize installation...")
+                finalize_installation()
+            else:
+                log(f"UpdatePolicyChanger execution failed with return code: {process.returncode}")
+                log("Proceeding with finalization despite failure...")
+                finalize_installation()
+                
+        except subprocess.TimeoutExpired:
+            log("PowerShell command execution timed out after 5 minutes")
             finalize_installation()
-        else:
-            log(f"UpdatePolicyChanger execution failed with return code: {process.returncode}")
-            log(f"Process error: {process.stderr}")
+        except subprocess.SubprocessError as e:
+            log(f"Error executing PowerShell command: {e}")
             finalize_installation()
             
-    except requests.exceptions.RequestException as e:
-        log(f"Network error during UpdatePolicyChanger script download: {str(e)}")
-        finalize_installation()
-    except IOError as e:
-        log(f"File I/O error while saving UpdatePolicyChanger script: {str(e)}")
-        finalize_installation()
     except Exception as e:
-        log(f"Unexpected error during UpdatePolicyChanger execution: {str(e)}")
+        log(f"Critical error in UpdatePolicyChanger: {e}")
+        log("Proceeding to finalization due to critical error...")
         finalize_installation()
+
 
 def finalize_installation():
     log("Installation complete. Restarting system...")

@@ -95,13 +95,6 @@ def main():
 
     def perform_installation():
         try:
-            logging.info("Applying Windows registry modifications and customizations...")
-            debloat_windows.apply_registry_changes()
-            logging.info("Debloat and customization complete.")
-        except Exception as e:
-            logging.error(f"Error applying registry changes: {e}")
-
-        try:
             if install_raven:
                 logging.info("Installing Raven software...")
                 raven_software_install.main()
@@ -115,6 +108,13 @@ def main():
             logging.info(f"{selected_browser} browser installation complete.")
         except Exception as e:
             logging.error(f"Error during browser installation: {e}")
+
+        try:
+            logging.info("Applying Windows registry modifications and customizations...")
+            debloat_windows.apply_registry_changes()
+            logging.info("Debloat and customization complete.")
+        except Exception as e:
+            logging.error(f"Error applying registry changes: {e}")
 
         logging.info("All installations and configurations completed.")
         
