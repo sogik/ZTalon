@@ -202,7 +202,7 @@ def run_profile_tweaks():
         log(f"Error in profile tweaks: {str(e)}")
         run_applybackground()
 
-def run_profile_tweaks():
+def run_applybackground():
     log("Starting ApplyBackground tweaks...")
     try:
         temp_dir = tempfile.gettempdir()
