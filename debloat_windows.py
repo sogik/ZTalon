@@ -8,6 +8,7 @@ import winreg
 import shutil
 import time
 import logging
+import json
 
 LOG_FILE = "talon.txt"
 logging.basicConfig(
@@ -137,70 +138,87 @@ def run_oouninstall():
         if process.returncode == 0:
             log("Office Online uninstallation completed successfully")
             log(f"Process stdout: {process.stdout}")
-            run_profile_tweaks()
+            run_tweaks()
         else:
             log(f"Office Online uninstallation failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
-            run_profile_tweaks()
+            run_tweaks()
             
     except Exception as e:
         log(f"Unexpected error during OO uninstallation: {str(e)}")
-        run_profile_tweaks()
+        run_tweaks()
 
-def run_profile_tweaks():
-    log("Starting Windows profile tweaks...")
+def run_tweaks():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    if not is_admin():
+        log("Must be run as an administrator.")
+        sys.exit(1)
+
     try:
+        config_url = "https://raw.githubusercontent.com/ravendevteam/talon-applyprofile/refs/heads/main/profiles/barebones.json"
+        log(f"Downloading config from: {config_url}")
+        response = requests.get(config_url)
+        config = json.loads(response.content.decode('utf-8-sig'))
+        
         temp_dir = tempfile.gettempdir()
-        exe_name = "applyprofile.exe"
-        exe_path = os.path.join(temp_dir, exe_name)
-        url = "https://github.com/ravendevteam/talon-applyprofile/releases/download/v1.1.0/applyprofile.exe"
-        download_success = False
-        for attempt in range(3):
-            try:
-                log(f"Downloading {exe_name} (Attempt {attempt + 1}/3)...")
-                response = requests.get(url, stream=True, timeout=10)
-                if response.status_code == 200:
-                    with open(exe_path, "wb") as file:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            file.write(chunk)
-                    log(f"Download complete: {exe_path}")
-                    download_success = True
-                    break
-                else:
-                    log(f"Download failed with status code: {response.status_code}")
-            except Exception as e:
-                log(f"Download attempt {attempt + 1} failed: {e}")
-                time.sleep(3)
+        json_path = os.path.join(temp_dir, "custom_config.json")
+        
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4)
 
-        if not download_success:
-            log("Failed to download profile tweaker")
-            run_applybackground()
-            return
-
-        if not os.path.exists(exe_path):
-            log(f"Profile tweaker not found at: {exe_path}")
-            run_applybackground()
-            return
-
-        log(f"Running profile tweaker from: {exe_path}")
-        process = subprocess.run(
-            [exe_path, "--barebones"],
-            capture_output=True,
-            text=True
+        log_file = os.path.join(temp_dir, "cttwinutil.log")
+        command = [
+            "powershell",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"$ErrorActionPreference = 'SilentlyContinue'; " +
+            f"iex \"& {{ $(irm christitus.com/win) }} -Config '{json_path}' -Run\" *>&1 | " +
+            "Tee-Object -FilePath '" + log_file + "'"
+        ]
+        
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
 
-        if process.returncode == 0:
-            log("Profile tweaks applied successfully")
-        else:
-            log(f"Error applying profile tweaks: {process.stderr}")
+        while True:
+            output = process.stdout.readline()
+            if output:
+                output = output.strip()
+                log(f"CTT Output: {output}")
+                if "Tweaks are Finished" in output:
+                    log("Detected completion message. Terminating...")
 
-        log("Profile tweaks complete")
-        run_applybackground()
+                    subprocess.run(
+                        ["powershell", "-Command", "Stop-Process -Name powershell -Force"],
+                        capture_output=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+
+                    run_applybackground()
+                    os._exit(0)
+            
+            if process.poll() is not None:
+                run_applybackground()
+                os._exit(1)
+
+        return False
 
     except Exception as e:
-        log(f"Error in profile tweaks: {str(e)}")
+        log(f"Error: {str(e)}")
         run_applybackground()
+        os._exit(1)
 
 def run_applybackground():
     log("Starting ApplyBackground tweaks...")
