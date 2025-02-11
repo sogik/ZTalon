@@ -6,7 +6,6 @@ import subprocess
 import requests
 import winreg
 import shutil
-import threading
 import time
 import logging
 
@@ -32,56 +31,6 @@ if not is_admin():
         None, "runas", sys.executable, " ".join(sys.argv), None, 1
     )
     sys.exit(0)
-
-class InstallationWorker(threading.Thread):
-    def __init__(self, exe_name, url, args=None, callback=None):
-        super().__init__()
-        self.exe_name = exe_name
-        self.url = url
-        self.args = args if args else []
-        self.callback = callback
-
-    def run(self):
-        try:
-            temp_dir = tempfile.gettempdir()
-            exe_path = os.path.join(temp_dir, self.exe_name)
-
-            for attempt in range(3):
-                try:
-                    log(f"Downloading {self.exe_name} (Attempt {attempt + 1}/3)...")
-                    response = requests.get(self.url, stream=True, timeout=10)
-                    if response.status_code == 200:
-                        with open(exe_path, "wb") as file:
-                            for chunk in response.iter_content(chunk_size=8192):
-                                file.write(chunk)
-                        log(f"Download complete: {exe_path}")
-                        break
-                except Exception as e:
-                    log(f"Download failed: {e}")
-                    time.sleep(3)
-            else:
-                log(f"Failed to download {self.exe_name} after multiple attempts.")
-                return
-
-            log(f"Running {self.exe_name}...")
-            process = subprocess.Popen(
-                [exe_path, *self.args],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-
-            process.wait()
-            if process.returncode != 0:
-                log(f"Error running {self.exe_name}: {process.stderr.read()}")
-            log(f"{self.exe_name} installation complete.")
-            if self.callback:
-                self.callback()
-
-        except Exception as e:
-            log(f"Error: {e}")
-            if self.callback:
-                self.callback()
 
 def apply_registry_changes():
     log("Applying registry changes...")
@@ -253,22 +202,59 @@ def run_profile_tweaks():
         log(f"Error in profile tweaks: {str(e)}")
         run_applybackground()
 
-
-def run_applybackground():
-    log("Starting background application setup...")
+def run_profile_tweaks():
+    log("Starting ApplyBackground tweaks...")
     try:
-        worker = InstallationWorker(
-            "applybackground.exe",
-            "https://github.com/ravendevteam/talon-applybackground/releases/download/v1.0.0/applybackground.exe",
-            callback=run_winconfig
+        temp_dir = tempfile.gettempdir()
+        exe_name = "applybackground.exe"
+        exe_path = os.path.join(temp_dir, exe_name)
+        url = "https://github.com/ravendevteam/talon-applybackground/releases/download/v1.0.0/applybackground.exe"
+        download_success = False
+        for attempt in range(3):
+            try:
+                log(f"Downloading {exe_name} (Attempt {attempt + 1}/3)...")
+                response = requests.get(url, stream=True, timeout=10)
+                if response.status_code == 200:
+                    with open(exe_path, "wb") as file:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            file.write(chunk)
+                    log(f"Download complete: {exe_path}")
+                    download_success = True
+                    break
+                else:
+                    log(f"Download failed with status code: {response.status_code}")
+            except Exception as e:
+                log(f"Download attempt {attempt + 1} failed: {e}")
+                time.sleep(3)
+
+        if not download_success:
+            log("Failed to download ApplyBackground")
+            run_winconfig()
+            return
+
+        if not os.path.exists(exe_path):
+            log(f"ApplyBackground not found at: {exe_path}")
+            run_winconfig()
+            return
+
+        log(f"Running ApplyBackground from: {exe_path}")
+        process = subprocess.run(
+            [exe_path],
+            capture_output=True,
+            text=True
         )
-        log(f"Created InstallationWorker for background application")
-        log(f"Download URL: {worker.url}")
-        log(f"Target executable: {worker.exe_name}")
-        worker.start()
-        log("Background application installation thread started")
+
+        if process.returncode == 0:
+            log("ApplyBackground applied successfully")
+        else:
+            log(f"Error applying ApplyBackground: {process.stderr}")
+
+        log("ApplyBackground complete")
+        run_winconfig()
+
     except Exception as e:
-        log(f"Error initializing background application setup: {str(e)}")
+        log(f"Error in ApplyBackground: {str(e)}")
+        run_winconfig()
 
 def run_winconfig():
     log("Starting Windows configuration process...")
@@ -309,13 +295,17 @@ def run_winconfig():
             log(f"Windows configuration failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
+            run_updatepolicychanger()
             
     except requests.exceptions.RequestException as e:
         log(f"Network error during Windows configuration script download: {str(e)}")
+        run_updatepolicychanger()
     except IOError as e:
         log(f"File I/O error while saving Windows configuration script: {str(e)}")
+        run_updatepolicychanger()
     except Exception as e:
         log(f"Unexpected error during Windows configuration: {str(e)}")
+        run_updatepolicychanger()
 
 def run_updatepolicychanger():
     log("Starting UpdatePolicyChanger script execution...")
