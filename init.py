@@ -123,12 +123,15 @@ def main():
 
         logging.info("All installations and configurations completed.")
         install_screen.close()
-        restart_system()
 
     try:
         logging.info("Starting installation process in a separate thread...")
         install_thread = threading.Thread(target=perform_installation)
         install_thread.start()
+        while install_thread.is_alive():
+            app.processEvents()
+        logging.info("Installation complete. Restarting system...")
+        restart_system()
     except Exception as e:
         logging.error(f"Error starting installation thread: {e}")
 

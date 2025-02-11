@@ -95,17 +95,17 @@ def apply_registry_changes():
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentColorMenu", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentPalette", winreg.REG_BINARY, b"\x00" * 32), # Makes the taskbar black
             # Below are registry changes for disabling "feature" (bloat) updates
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdates", winreg.REG_DWORD, 1), # Enables the delay of security updates
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdatesPeriodInDays", winreg.REG_DWORD, 4), # Sets delay of security updates for 4 days
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVerion", winreg.REG_DWORD, 1), # Enables the target release version policy
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVersionInfo", winreg.REG_SZ, "24H2"), # Sets the target release version to 24H2
-            (winreg.HKEY_LOCAL_MACHINE, r"Software\\Policies\\Microsoft\\Windows\\WindowsUpdate", "ProductVersion", winreg.REG_SZ, "Windows 11") # Sets the product version to Windows 11
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdates", winreg.REG_DWORD, 1), # Enables the delay of security updates
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate", "DeferQualityUpdatesPeriodInDays", winreg.REG_DWORD, 4), # Sets delay of security updates for 4 days
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVerion", winreg.REG_DWORD, 1), # Enables the target release version policy
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate", "TargetReleaseVersionInfo", winreg.REG_SZ, "24H2"), # Sets the target release version to 24H2
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate", "ProductVersion", winreg.REG_SZ, "Windows 11") # Sets the product version to Windows 11
         ]
         for root_key, key_path, value_name, value_type, value in registry_modifications:
             try:
-                with winreg.OpenKey(root_key, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                with winreg.CreateKeyEx(root_key, key_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, value_name, 0, value_type, value)
-                log(f"Applied {value_name} to {key_path}")
+                    log(f"Applied {value_name} to {key_path}")
             except Exception as e:
                 log(f"Failed to modify {value_name} in {key_path}: {e}")
         log("Registry changes applied successfully.")
