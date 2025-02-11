@@ -13,6 +13,10 @@ class InstallScreen(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.showFullScreen()
         self.setStyleSheet("background-color: black;")
+        
+        # Pencereyi her zaman en üstte tut
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setWindowState(Qt.WindowFullScreen | Qt.WindowActive)
         self.load_chakra_petch_font()
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)

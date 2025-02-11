@@ -12,6 +12,8 @@ from install_screen import InstallScreen
 import debloat_windows
 import raven_software_install
 import browser_install
+import time
+from PyQt5.QtCore import QTimer
 
 LOG_FILE = "talon.txt"
 logging.basicConfig(
@@ -26,13 +28,6 @@ def is_running_as_admin():
     except Exception as e:
         logging.error(f"Error checking admin privileges: {e}")
         return False
-
-def restart_system():
-    logging.info("Restarting system...")
-    try:
-        subprocess.call(["shutdown", "/r", "/f", "/t", "0"])
-    except Exception as e:
-        logging.error(f"Failed to restart system: {e}")
 
 def restart_as_admin():
     try:
@@ -122,16 +117,20 @@ def main():
             logging.error(f"Error during browser installation: {e}")
 
         logging.info("All installations and configurations completed.")
+        
         install_screen.close()
+        logging.info("Installation complete. Restarting system...")
+        debloat_windows.finalize_installation()
 
     try:
         logging.info("Starting installation process in a separate thread...")
         install_thread = threading.Thread(target=perform_installation)
         install_thread.start()
+        
         while install_thread.is_alive():
             app.processEvents()
-        logging.info("Installation complete. Restarting system...")
-        restart_system()
+            time.sleep(0.05)
+            
     except Exception as e:
         logging.error(f"Error starting installation thread: {e}")
 
