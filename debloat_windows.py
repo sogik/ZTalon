@@ -160,7 +160,7 @@ def run_tweaks():
         sys.exit(1)
 
     try:
-        config_url = "https://raw.githubusercontent.com/ravendevteam/talon-applyprofile/refs/heads/main/profiles/barebones.json"
+        config_url = "https://raw.githubusercontent.com/ravendevteam/talon/refs/heads/main/barebones.json"
         log(f"Downloading config from: {config_url}")
         response = requests.get(config_url)
         config = json.loads(response.content.decode('utf-8-sig'))
