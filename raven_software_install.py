@@ -111,8 +111,10 @@ def run_toolbox():
 
     if success:
         log("All packages installed successfully")
+        sys.exit(1)
     else:
         log("Some packages failed to install")
+        sys.exit(1)
 
     return success
 
