@@ -1,9 +1,6 @@
 
 # Talon
 
-> [!WARNING]  
-> While the source code for is public, it is not in a finished state, therefore prepackaged executables are not yet available. If you build your own executable, it is advised to run it under a virtual machine only, as it is considered unstable.
-
 > [!NOTE]
 > All of our free software is designed to respect your privacy, while being as simple to use as possible. Our free software is licensed under the [BSD-3-Clause license](https://ravendevteam.org/files/BSD-3-Clause.txt). By using our software, you acknowledge and agree to the terms of the license.
 
