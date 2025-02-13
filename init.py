@@ -14,6 +14,10 @@ import raven_software_install
 import browser_install
 import time
 from PyQt5.QtCore import QTimer
+import platform
+import winreg
+
+TALON_VERSION = "1.1.0"
 
 LOG_FILE = "talon.txt"
 logging.basicConfig(
@@ -21,6 +25,26 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+def get_windows_info():
+    try:
+        windows_version = platform.win32_ver()
+        reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+        key = winreg.OpenKey(reg, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+        
+        build_number = winreg.QueryValueEx(key, "CurrentBuildNumber")[0]
+        product_name = winreg.QueryValueEx(key, "ProductName")[0]
+        display_version = winreg.QueryValueEx(key, "DisplayVersion")[0]
+        
+        return {
+            'version': windows_version[0],
+            'build': build_number,
+            'product_name': product_name,
+            'display_version': display_version
+        }
+    except Exception as e:
+        logging.error(f"Error getting Windows information: {e}")
+        return None
 
 def is_running_as_admin():
     try:
@@ -41,6 +65,14 @@ def restart_as_admin():
 
 def main():
     logging.info("Starting Talon Installer")
+    logging.info(f"Talon Version: {TALON_VERSION}")
+    
+    windows_info = get_windows_info()
+    if windows_info:
+        logging.info(f"Windows Version: {windows_info['product_name']}")
+        logging.info(f"Build Number: {windows_info['build']}")
+        logging.info(f"Display Version: {windows_info['display_version']}")
+    
     app = QApplication(sys.argv)
 
     if not is_running_as_admin():
