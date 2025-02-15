@@ -7,7 +7,7 @@
 Simple utility to debloat Windows in 2 clicks.
 
 > [!CAUTION]
-> Talon is designed to be used on **freshly installed Windows 11 systems**. Trying to use Talon on an already in-use system, or a any older versions of Windows, is not guaranteed to work and can cause some apps to stop working properly and system corruption!
+> Talon is designed to be used on **freshly installed Windows 11 systems**. Trying to use ZTalon on an already in-use system, or a any older versions of Windows, is not guaranteed to work and can cause some apps to stop working properly and system corruption!
 
 ## Installation
 See [Releases](https://github.com/sogik/ZTalon/releases). Download the latest version for Windows.
