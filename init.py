@@ -27,6 +27,10 @@ def main():
     try:
             logging.info("Comprobave is Running as admin.")
             is_running_as_admin()
+            logging.info("Installing dependencies...")
+            debloat_windows.run_directxinstallation()
+            debloat_windows.run_cinstallation()
+            logging.info("Dependencies installed.")
             logging.info("Applying Start menu debloat and optimization...")
             debloat_windows.run_startmenuoptimization()
             logging.info("Start menu debloat and optimization complete.")
