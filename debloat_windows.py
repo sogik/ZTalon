@@ -287,6 +287,307 @@ def run_backgroundapps():
         log(f"Unexpected error during registry tweak: {str(e)}")
         return False
     
+def run_copilotuninstaller():
+    log("Starting copilot uninstaller...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/3%20Copilot.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "copilotuninstaller.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def run_widgetsuninstaller():
+    log("Starting widget uninstaller...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/4%20Widgets.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "widgetsuninstaller.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def run_gamebaroptimization():
+    log("Starting gamebar optimization...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/6%20Gamebar.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "gamebar.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def apply_powerplan():
+    log("Starting power plan optimization...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/9%20Power%20Plan.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "powerplan.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def apply_signoutlockscreen():
+    log("Starting signout lockscreen optimization...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/13%20Signout%20Lockscreen.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "lockscreensignout.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def run_edgeuninstaller():
+    log("Starting edge uninstaller...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/14%20Edge.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "edgeuninstaller.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+
+def apply_networkoptimization():
+    log("Starting network optimization...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/8%20Advanced/1%20Network%20Adapter.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "networkoptimization.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+        
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+        
 def finalize_installation():
     log("Clean up...")
     try:
@@ -313,10 +614,10 @@ def finalize_installation():
         )
         
         if process.returncode == 0:
-            log("Registry tweak completed successfully")
+            log("Clean up completed successfully")
             log(f"Process stdout: {process.stdout}")
         else:
-            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Clean up failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
             
@@ -325,14 +626,14 @@ def finalize_installation():
         return False
     
     log("Installation complete. Restarting system...")
-    """try:
+    try:
         subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
     except subprocess.CalledProcessError as e:
         log(f"Error during restart: {e}")
         try:
             os.system("shutdown /r /t 0")
         except Exception as e:
-            log(f"Failed to restart system: {e}")"""
+            log(f"Failed to restart system: {e}")
 
 if __name__ == "__main__":
     apply_registry_changes()
