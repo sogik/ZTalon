@@ -704,7 +704,40 @@ def run_cinstallation():
     except Exception as e:
         log(f"Unexpected error during registry tweak: {str(e)}")
         return False
-                   
+    
+def apply_gpuregistryoptimization(gpu):
+    try:
+        if gpu == "amd":
+            log("Applying AMD registry changes...")
+            registry_modifications = [
+                # Visual changes
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\AMD Crash Defender Service", "Start", winreg.REG_DWORD, 4),
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\AMD External Events Utility", "Start", winreg.REG_DWORD, 4),
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\amdfendr", "Start", winreg.REG_DWORD, 4),
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\amdfendrmgr", "Start", winreg.REG_DWORD, 4),
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\amdlog", "Start", winreg.REG_DWORD, 4),
+                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\GpuEnergyDrv", "Start", winreg.REG_DWORD, 4),
+            ]
+        elif gpu == "nvidia":
+            log("Applying NVIDIA registry changes...")
+            registry_modifications = [
+                # Visual changes
+                (winreg.HKEY_CURRENT_USER, r"SOFTWARE\\NVIDIA Corporation\\Global\\GFExperience", "NotifyNewDisplayUpdates", winreg.REG_DWORD, 0),
+            ]
+        for root_key, key_path, value_name, value_type, value in registry_modifications:
+            try:
+                with winreg.CreateKeyEx(root_key, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                    winreg.SetValueEx(key, value_name, 0, value_type, value)
+                    log(f"Applied {value_name} to {key_path}")
+            except Exception as e:
+                log(f"Failed to modify {value_name} in {key_path}: {e}")
+        log("Registry changes applied successfully.")
+        subprocess.run(["taskkill", "/F", "/IM", "explorer.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["start", "explorer.exe"], shell=True)
+        log("Explorer restarted to apply registry changes.")      
+    except Exception as e:
+        log(f"Error applying registry changes: {e}")
+
 def finalize_installation():
     log("Clean up...")
     try:
