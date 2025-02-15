@@ -710,7 +710,6 @@ def apply_gpuregistryoptimization(gpu):
         if gpu == "amd":
             log("Applying AMD registry changes...")
             registry_modifications = [
-                # Visual changes
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\AMD Crash Defender Service", "Start", winreg.REG_DWORD, 4),
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\AMD External Events Utility", "Start", winreg.REG_DWORD, 4),
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\\CurrentControlSet\\Services\\amdfendr", "Start", winreg.REG_DWORD, 4),
@@ -721,9 +720,11 @@ def apply_gpuregistryoptimization(gpu):
         elif gpu == "nvidia":
             log("Applying NVIDIA registry changes...")
             registry_modifications = [
-                # Visual changes
                 (winreg.HKEY_CURRENT_USER, r"SOFTWARE\\NVIDIA Corporation\\Global\\GFExperience", "NotifyNewDisplayUpdates", winreg.REG_DWORD, 0),
             ]
+        else:
+            log("No GPU specified. Skipping GPU registry optimization.")
+            return None
         for root_key, key_path, value_name, value_type, value in registry_modifications:
             try:
                 with winreg.CreateKeyEx(root_key, key_path, 0, winreg.KEY_SET_VALUE) as key:
