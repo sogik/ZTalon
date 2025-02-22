@@ -704,7 +704,50 @@ def run_cinstallation():
     except Exception as e:
         log(f"Unexpected error during registry tweak: {str(e)}")
         return False
-    
+
+def apply_nvidiaoptimization():
+    log("Starting nvidia optimization...")
+    try:
+        script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/5%20Graphics/5%20Nvidia%20Settings.ps1"
+        temp_dir = tempfile.gettempdir()
+        script_path = os.path.join(temp_dir, "nvidiasettings.ps1")
+        log(f"Attempting to download tweak script from: {script_url}")
+        log(f"Target script path: {script_path}")
+        
+        response = requests.get(script_url)
+        log(f"Download response status code: {response.status_code}")
+        
+        with open(script_path, "wb") as file:
+            file.write(response.content)
+        log("tweak script successfully saved to disk")
+        
+        # Reemplazar el comando de Read-Host con una asignación directa
+        old_command = '$choice = Read-Host " "'
+        new_command = '$choice = 1'
+        replace_command_in_script(script_path, old_command, new_command)
+        log("Command replaced in the script")
+
+        powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
+        log(f"Executing PowerShell command: {powershell_command}")
+        
+        process = subprocess.run(
+            ["powershell", "-Command", powershell_command],
+            capture_output=True,
+            text=True
+        )
+        
+        if process.returncode == 0:
+            log("Registry tweak completed successfully")
+            log(f"Process stdout: {process.stdout}")
+        else:
+            log(f"Registry tweak failed with return code: {process.returncode}")
+            log(f"Process stderr: {process.stderr}")
+            log(f"Process stdout: {process.stdout}")
+            
+    except Exception as e:
+        log(f"Unexpected error during registry tweak: {str(e)}")
+        return False
+      
 def apply_gpuregistryoptimization(gpu):
     try:
         if gpu == "amd":
@@ -719,6 +762,7 @@ def apply_gpuregistryoptimization(gpu):
             ]
         elif gpu == "nvidia":
             log("Applying NVIDIA registry changes...")
+            apply_nvidiaoptimization()
             registry_modifications = [
                 (winreg.HKEY_CURRENT_USER, r"SOFTWARE\\NVIDIA Corporation\\Global\\GFExperience", "NotifyNewDisplayUpdates", winreg.REG_DWORD, 0),
             ]

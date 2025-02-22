@@ -9,6 +9,7 @@ import time
 import platform
 import winreg
 import GPUtil
+import app_install
 
 LOG_FILE = "talon.txt"
 logging.basicConfig(
