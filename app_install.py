@@ -35,7 +35,7 @@ if not is_admin():
 def run_appinstaller():
     log("Starting app installer...")
     try:
-        script_url = "https://raw.githubusercontent.com/gameshler/Ultimate-Windows-Optimization-Guide/refs/heads/main/4%20Installers/1%20Installers.ps1"
+        script_url = "https://raw.githubusercontent.com/sogik/ZTalon/refs/heads/main/src/scripts/appinstallers.ps1"
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
         log(f"Attempting to download installer script from: {script_url}")
