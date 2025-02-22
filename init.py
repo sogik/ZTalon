@@ -11,7 +11,7 @@ import winreg
 import GPUtil
 import app_install
 
-LOG_FILE = "talon.txt"
+LOG_FILE = "ztalon.txt"
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.DEBUG,
@@ -61,8 +61,21 @@ def get_windows_info():
         logging.error(f"Error getting Windows information: {e}")
         return None
 
+def ask_user_choice():
+    powershell_script = """
+    $choice = Read-Host "What would you like to do? (1) Install applications (2) Optimize only"
+    if ($choice -eq "1") {
+        Write-Output "install"
+    } elseif ($choice -eq "2") {
+        Write-Output "optimize"
+    } else {
+        Write-Output "invalid"
+    }
+    """
+    result = subprocess.run(["powershell", "-Command", powershell_script], capture_output=True, text=True)
+    return result.stdout.strip()
+
 def main():
-    
     windows_info = get_windows_info()
     if windows_info:
         logging.info(f"Windows Version: {windows_info['product_name']}")
@@ -81,55 +94,70 @@ def main():
                 logging.info("Unknown GPU detected.")
 
     try:
-            logging.info("Comprobave is Running as admin.")
-            is_running_as_admin()
-            logging.info("Admin privileges verified.")
-            logging.info("Apllying gpu registry optimization...")
-            debloat_windows.run_gpuregistryoptimization(gputype)
-            logging.info("GPU registry optimization complete.")
-            logging.info("Installing dependencies...")
-            debloat_windows.run_directxinstallation()
-            debloat_windows.run_cinstallation()
-            logging.info("Dependencies installed.")
-            logging.info("Applying Start menu debloat and optimization...")
-            debloat_windows.run_startmenuoptimization()
-            logging.info("Start menu debloat and optimization complete.")
-            logging.info("Uninstalling copilot...")
-            debloat_windows.run_copilotuninstaller()
-            logging.info("Copilot uninstalled.")
-            logging.info("Uninstalling widgets...")
-            debloat_windows.run_widgetsuninstaller()
-            logging.info("Widgets uninstalled.")
-            logging.info("Applying gamebar optimizations...")
-            debloat_windows.run_gamebaroptimization()
-            logging.info("Gamebar optimization complete.")
-            logging.info("Applying power plan...")
-            debloat_windows.apply_powerplan()
-            logging.info("Power plan applied.")
-            logging.info("Installing Timer Resolution.")
-            debloat_windows.install_timerresolution()
-            logging.info("Timer Resolution installed.")
-            logging.info("Applying Windows registry modifications and customizations...")
-            debloat_windows.run_registrytweak()
-            debloat_windows.apply_registry_changes()
-            logging.info("Windows registry modifications and customizations complete.")
-            logging.info("Applying Signout lockscreen optimzations...")
-            debloat_windows.apply_signoutlockscreen()
-            logging.info("Signout lockscreen optimizations applied.")
-            logging.info("Uninstalling edge...")
-            debloat_windows.run_edgeuninstaller()
-            logging.info("Edge uninstalled.")
-            logging.info("Applying background apps optimization.")
-            debloat_windows.run_backgroundapps()
-            logging.info("Background apps optimization complete.")
-            logging.info("Applying autoruns optimizations...")
-            debloat_windows.run_autoruns()
-            logging.info("Autoruns complete.")
-            logging.info("Applying network optimization...")
-            debloat_windows.apply_networkoptimization()
-            logging.info("Network optimization complete.")
+        logging.info("Checking if running as administrator.")
+        if not is_running_as_admin():
+            logging.error("No administrator privileges.")
+            return
+
+        logging.info("Admin privileges verified.")
+        
+        user_choice = ask_user_choice()
+        if user_choice == "install":
+            logging.info("Starting app installation...")
+            app_install.run_appinstaller()
+            logging.info("App installation complete.")
+        elif user_choice == "optimize":
+            logging.info("Skipping app installation. Proceeding with optimization...")
+        else:
+            logging.error("Invalid choice. Exiting.")
+            return
+
+        logging.info("Applying GPU registry optimization...")
+        debloat_windows.run_gpuregistryoptimization(gputype)
+        logging.info("GPU registry optimization complete.")
+        logging.info("Installing dependencies...")
+        debloat_windows.run_directxinstallation()
+        debloat_windows.run_cinstallation()
+        logging.info("Dependencies installed.")
+        logging.info("Applying Start menu debloat and optimization...")
+        debloat_windows.run_startmenuoptimization()
+        logging.info("Start menu debloat and optimization complete.")
+        logging.info("Uninstalling copilot...")
+        debloat_windows.run_copilotuninstaller()
+        logging.info("Copilot uninstalled.")
+        logging.info("Uninstalling widgets...")
+        debloat_windows.run_widgetsuninstaller()
+        logging.info("Widgets uninstalled.")
+        logging.info("Applying gamebar optimizations...")
+        debloat_windows.run_gamebaroptimization()
+        logging.info("Gamebar optimization complete.")
+        logging.info("Applying power plan...")
+        debloat_windows.apply_powerplan()
+        logging.info("Power plan applied.")
+        logging.info("Installing Timer Resolution.")
+        debloat_windows.install_timerresolution()
+        logging.info("Timer Resolution installed.")
+        logging.info("Applying Windows registry modifications and customizations...")
+        debloat_windows.run_registrytweak()
+        debloat_windows.apply_registry_changes()
+        logging.info("Windows registry modifications and customizations complete.")
+        logging.info("Applying Signout lockscreen optimizations...")
+        debloat_windows.apply_signoutlockscreen()
+        logging.info("Signout lockscreen optimizations applied.")
+        logging.info("Uninstalling edge...")
+        debloat_windows.run_edgeuninstaller()
+        logging.info("Edge uninstalled.")
+        logging.info("Applying background apps optimization.")
+        debloat_windows.run_backgroundapps()
+        logging.info("Background apps optimization complete.")
+        logging.info("Applying autoruns optimizations...")
+        debloat_windows.run_autoruns()
+        logging.info("Autoruns complete.")
+        logging.info("Applying network optimization...")
+        debloat_windows.apply_networkoptimization()
+        logging.info("Network optimization complete.")
     except Exception as e:
-            logging.error(f"Error applying registry changes: {e}")
+        logging.error(f"Error applying registry changes: {e}")
 
     logging.info("All installations and configurations completed.")
     logging.info("Installation complete. Restarting system...")

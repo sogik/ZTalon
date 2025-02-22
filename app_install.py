@@ -9,7 +9,7 @@ import time
 import logging
 import json
 
-LOG_FILE = "talon.txt"
+LOG_FILE = "ztalon.txt"
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,

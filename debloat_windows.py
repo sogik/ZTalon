@@ -10,7 +10,7 @@ import time
 import logging
 import json
 
-LOG_FILE = "talon.txt"
+LOG_FILE = "ztalon.txt"
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
@@ -41,16 +41,16 @@ def apply_registry_changes():
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "TaskbarAl", winreg.REG_DWORD, 1), # Align taskbar to the center
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "AppsUseLightTheme", winreg.REG_DWORD, 0), # Set Windows to dark theme
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "SystemUsesLightTheme", winreg.REG_DWORD, 0), # Set Windows to dark theme
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentColorMenu", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (1)  --.
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\Personalize", "ColorPrevalence", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (2)   |-- These are redundant. I know
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\DWM", "AccentColorInStartAndTaskbar", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (3)                   --'
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentColorMenu", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (1)
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "ColorPrevalence", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (2)
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\DWM", "AccentColorInStartAndTaskbar", winreg.REG_DWORD, 1), # Makes accent color the color of the taskbar and start menu (3)
             (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentPalette", winreg.REG_BINARY, b"\x00" * 32), # Makes the taskbar black
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "AppCaptureEnabled", winreg.REG_DWORD, 0), #Fix the  Get an app for 'ms-gamingoverlay' popup
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "AppCaptureEnabled", winreg.REG_DWORD, 0), # Fix the Get an app for 'ms-gamingoverlay' popup
             (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\\Microsoft\\PolicyManager\\default\\ApplicationManagement\\AllowGameDVR", "Value", winreg.REG_DWORD, 0), # Disable Game DVR (Reduces FPS Drops)
-            (winreg.HKEY_CURRENT_USER, r"Control Panel\\Desktop", "MenuShowDelay", winreg.REG_SZ, "0"),# Reduce menu delay for snappier UI
-            (winreg.HKEY_CURRENT_USER, r"Control Panel\\Desktop\\WindowMetrics", "MinAnimate", winreg.REG_DWORD, 0),# Disable minimize/maximize animations
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "ExtendedUIHoverTime", winreg.REG_DWORD, 1),# Reduce hover time for tooltips and UI elements
-            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "HideFileExt", winreg.REG_DWORD, 0),# Show file extensions in Explorer (useful for security and organization)
+            (winreg.HKEY_CURRENT_USER, r"Control Panel\\Desktop", "MenuShowDelay", winreg.REG_SZ, "0"), # Reduce menu delay for snappier UI
+            (winreg.HKEY_CURRENT_USER, r"Control Panel\\Desktop\\WindowMetrics", "MinAnimate", winreg.REG_DWORD, 0), # Disable minimize/maximize animations
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "ExtendedUIHoverTime", winreg.REG_DWORD, 1), # Reduce hover time for tooltips and UI elements
+            (winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "HideFileExt", winreg.REG_DWORD, 0), # Show file extensions in Explorer (useful for security and organization)
         ]
         for root_key, key_path, value_name, value_type, value in registry_modifications:
             try:
@@ -92,9 +92,9 @@ def run_registrytweak():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -135,9 +135,9 @@ def install_timerresolution():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("timer script successfully saved to disk")
+        log("Timer script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -178,9 +178,9 @@ def run_startmenuoptimization():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -208,7 +208,7 @@ def run_startmenuoptimization():
         return False
     
 def run_autoruns():
-    log("Starting start menu tweaks...")
+    log("Starting autoruns tweaks...")
     try:
         script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/6%20Windows/21%20Autoruns.ps1"
         temp_dir = tempfile.gettempdir()
@@ -221,7 +221,7 @@ def run_autoruns():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
 
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")
@@ -245,7 +245,7 @@ def run_autoruns():
         return False
 
 def run_backgroundapps():
-    log("Starting start menu tweaks...")
+    log("Starting background apps tweaks...")
     try:
         script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/refs/heads/main/3%20Setup/9%20Background%20Apps.ps1"
         temp_dir = tempfile.gettempdir()
@@ -258,9 +258,9 @@ def run_backgroundapps():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -301,9 +301,9 @@ def run_copilotuninstaller():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -344,9 +344,9 @@ def run_widgetsuninstaller():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -387,9 +387,9 @@ def run_gamebaroptimization():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -430,9 +430,9 @@ def apply_powerplan():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -473,9 +473,9 @@ def apply_signoutlockscreen():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -516,9 +516,9 @@ def run_edgeuninstaller():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -559,9 +559,9 @@ def apply_networkoptimization():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -602,9 +602,9 @@ def apply_msimode():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -645,7 +645,7 @@ def run_directxinstallation():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")
@@ -682,7 +682,7 @@ def run_cinstallation():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")
@@ -719,9 +719,9 @@ def apply_nvidiaoptimization():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
-        # Reemplazar el comando de Read-Host con una asignación directa
+        # Replace the Read-Host command with a direct assignment
         old_command = '$choice = Read-Host " "'
         new_command = '$choice = 1'
         replace_command_in_script(script_path, old_command, new_command)
@@ -797,7 +797,7 @@ def finalize_installation():
         
         with open(script_path, "wb") as file:
             file.write(response.content)
-        log("tweak script successfully saved to disk")
+        log("Tweak script successfully saved to disk")
         
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")
