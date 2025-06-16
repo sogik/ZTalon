@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="600" src="src/images/ZTalon.png" alt="ZTalon Logo">
+  <img width="600" src="src/images/ztalon_banner.png" alt="ZTalon Logo">
 
   </div>
 
