@@ -1,6 +1,8 @@
 <div align="center">
   <img width="600" src="src/images/ZTalon.png" alt="ZTalon Logo">
 
+  </div>
+
 # ZTalon
 
 Simple utility to debloat Windows in 2 clicks.
