@@ -23,14 +23,50 @@ def log_and_print(message):
     logging.info(message)
     print(message)
 
+def is_console_available():
+    """Check if console is available for input"""
+    try:
+        # Try to get console window handle
+        return ctypes.windll.kernel32.GetConsoleWindow() != 0
+    except:
+        return False
+
+def safe_input(prompt="", default=""):
+    """Safe input function that handles EOF errors"""
+    try:
+        if is_console_available():
+            return input(prompt)
+        else:
+            # If no console, create one or use default
+            try:
+                # Allocate a console for the process
+                ctypes.windll.kernel32.AllocConsole()
+                # Reopen stdin, stdout, stderr
+                sys.stdin = open('CONIN$', 'r')
+                sys.stdout = open('CONOUT$', 'w') 
+                sys.stderr = open('CONOUT$', 'w')
+                return input(prompt)
+            except:
+                print(f"{prompt}(Using default: {default})")
+                return default
+    except EOFError:
+        print(f"\n⚠️ No console input available. Using default: {default}")
+        return default
+    except KeyboardInterrupt:
+        print("\n🛑 Operation cancelled by user.")
+        sys.exit(0)
+
 def pause_and_continue(message="Press Enter to continue..."):
     """Pauses the program until the user presses Enter (ALWAYS)"""
     print(f"\n{message}")
-    input()
+    safe_input()
 
 def clear_screen():
     """Clears the screen"""
-    os.system('cls' if os.name == 'nt' else 'clear')
+    try:
+        os.system('cls' if os.name == 'nt' else 'clear')
+    except:
+        print("\n" * 50)  # Fallback if cls doesn't work
 
 def show_menu():
     """Shows the main menu"""
@@ -52,7 +88,7 @@ def get_user_choice():
     """Gets user choice with validation"""
     while True:
         show_menu()
-        choice = input("Enter your option (1-4): ").strip()
+        choice = safe_input("Enter your option (1-4): ", "2").strip()
         
         if choice == "1":
             return "install"
@@ -103,7 +139,7 @@ def show_app_install_menu():
     print("=" * 70)
     
     while True:
-        choice = input("Enter your option (1-2): ").strip()
+        choice = safe_input("Enter your option (1-2): ", "2").strip()
         if choice == "1":
             return True
         elif choice == "2":
@@ -439,7 +475,7 @@ def ask_restart():
     print()
     
     while True:
-        choice = input("Enter your option (1-3): ").strip()
+        choice = safe_input("Enter your option (1-3): ", "2").strip()
         
         if choice == "1":
             print("\n🔄 Restarting system...")
@@ -486,8 +522,24 @@ def ask_restart():
         else:
             print("❌ Invalid option. Please choose 1, 2 or 3.")
 
+def ensure_console():
+    """Ensure console is available for the application"""
+    try:
+        # Try to allocate console if we don't have one
+        if not is_console_available():
+            ctypes.windll.kernel32.AllocConsole()
+            # Redirect stdout, stderr, stdin
+            sys.stdout = open('CONOUT$', 'w')
+            sys.stderr = open('CONOUT$', 'w')
+            sys.stdin = open('CONIN$', 'r')
+    except Exception as e:
+        log_and_print(f"⚠️ Could not allocate console: {e}")
+
 def main():
     try:
+        # Ensure we have a console for input/output
+        ensure_console()
+        
         clear_screen()
         print("=" * 60)
         print("              ZTALON - INITIALIZING...")
@@ -540,7 +592,7 @@ def main():
             optimizations_list = show_optimization_menu()
             
             while True:
-                choice = input("Enter your option: ").strip().lower()
+                choice = safe_input("Enter your option: ", "a").strip().lower()
                 
                 if choice == "c":
                     break  # Exit to main menu
