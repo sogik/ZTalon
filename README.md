@@ -5,7 +5,7 @@
 
 # ZTalon
 
-Simple utility to debloat Windows in 2 clicks.
+Simple utility to debloat Windows.
 
 > [!CAUTION]
 > ZTalon is designed to be used on **freshly installed Windows 11 systems**. Trying to use ZTalon on an already in-use system, or a any older versions of Windows, is not guaranteed to work and can cause some apps to stop working properly and system corruption!
