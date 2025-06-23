@@ -1,11 +1,13 @@
 <div align="center">
-  <img width="600" src="src/images/ztalon_banner.png" alt="ZTalon Logo">
+  <img width="600" src="src/images/ztalon-github.png" alt="ZTalon logo">
 
   </div>
 
 # ZTalon
 
 Simple utility to debloat Windows.
+
+**ZTalon is based on [Talon](https://github.com/ravendevteam/talon) by Raven Development Team, but includes personal modifications and enhancements for improved functionality and user experience.**
 
 > [!CAUTION]
 > ZTalon is designed to be used on **freshly installed Windows 11 systems**. Trying to use ZTalon on an already in-use system, or a any older versions of Windows, is not guaranteed to work and can cause some apps to stop working properly and system corruption!
@@ -18,13 +20,16 @@ To compile from source, make sure you have Python 3.12.4 or greater, and Nuitka,
 
 ## Authors & Contributors
 
-- [sogik](https://ravendevteam.org/)
+- [sogik](https://github.com/sogik)
 - [Raven Development Team](https://ravendevteam.org/) ([Talon](https://github.com/ravendevteam/talon))
-- [FR33THY](https://www.youtube.com/@FR33THY) ([Ultimate Windows Optimization Guide](https://github.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide))
-- [Icons by Icons8](https://icons8.com/)
 - [mre31](https://github.com/mre31)
+- [FR33THY](https://www.youtube.com/@FR33THY) ([Ultimate Windows Optimization Guide](https://github.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide))
 - [ChrisTitusTech](https://github.com/christitustech) ([CTT WinUtil](https://github.com/christitustech/winutil))
 - [Raphire](https://github.com/Raphire) ([Win11Debloat](https://github.com/Raphire/Win11Debloat))
+
+## Acknowledgments
+
+Special thanks to the **Raven Development Team** for creating the original Talon project, which serves as the foundation for ZTalon. This project builds upon their excellent work while adding personal enhancements and modifications to improve the Windows optimization experience.
 
 ## License
 
