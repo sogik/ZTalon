@@ -5,7 +5,7 @@
 
 # ZTalon
 
-Simple utility to debloat Windows.
+Simple utility to debloat and optimize Windows.
 
 > [!NOTE]
 > ZTalon is based on [Talon](https://github.com/ravendevteam/talon) by Raven Development Team, but includes personal modifications and enhancements for improved functionality and user experience.
