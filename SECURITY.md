@@ -18,12 +18,7 @@ ZTalon may trigger false positive warnings from antivirus software and Windows S
 certutil -hashfile ZTalon.exe SHA256
 ```
 
-### 2. Scan with Multiple Engines
-
-- Upload to [VirusTotal](https://www.virustotal.com) before running
-- Check our official VirusTotal submissions in releases
-
-### 3. Source Code Verification
+### 2. Source Code Verification
 
 - ZTalon is **100% open source**
 - Review the code at: https://github.com/sogik/ZTalon
@@ -59,7 +54,7 @@ If you believe ZTalon contains actual malware or security issues:
 
 - Open an issue on GitHub
 - Contact: [your-email]
-- Provide VirusTotal scan results
+- Provide scan results
 
 ---
 

@@ -21,10 +21,12 @@ To compile from source, make sure you have Python 3.12.4 or greater, install the
 
 ## Security & Antivirus Warnings
 
-⚠️ **SmartScreen/Antivirus Warning?** This is normal for new applications. ZTalon is:
+> [!CAUTION]
+> SmartScreen/Antivirus Warning? This is normal for new applications.
+
+ZTalon is:
 
 - **100% Open Source** - Review all code
-- **Virus-Free** - Check our [VirusTotal scans](https://www.virustotal.com/gui/file/751b4fd4061d1f8ade6bf4bb9e898b86904e65425b1a74f6ac20b36da85a0244?nocache=1)
 - **No Telemetry** - Doesn't collect your data
 - **Checksums Provided** - Verify file integrity
 
