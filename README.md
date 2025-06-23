@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="600" src="src/images/ztalon-github.png" alt="ZTalon logo">
+  <img width="800" src="src/images/ztalon-github.png" alt="ZTalon logo">
 
   </div>
 
@@ -17,7 +17,7 @@ Simple utility to debloat Windows.
 
 See [Releases](https://github.com/sogik/ZTalon/releases). Download the latest version for Windows.
 
-To compile from source, make sure you have Python 3.12.4 or greater, and Nuitka, then run `build.bat`.
+To compile from source, make sure you have Python 3.12.4 or greater, install the necessary libraries from `requirements.txt`, then run `build.bat`. **Please note that, when building from source, you are building the absolute latest version of the code (even newer than the most recent release)**!
 
 ## Authors & Contributors
 
