@@ -25,6 +25,13 @@ from components.utils import (
 enhanced_logger = setup_enhanced_logging("INFO")
 
 LOG_FILE = "ztalon.txt"
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    filemode='w',
+    encoding='utf-8'
+)
 
 def log_and_print(message):
     """Function to log and display in console using enhanced logging"""
