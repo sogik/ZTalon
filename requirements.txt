@@ -1,3 +1,4 @@
-requests
-nuitka
-setuptools
+requests>=2.31.0
+certifi>=2023.7.22
+nuitka>=2.4.8
+psutil>=5.9.0

@@ -1,5 +1,17 @@
 @echo off
-echo Building ZTalon...
+echo Building ZTalon with enhanced compatibility...
+
+:: Check for required dependencies
+python -c "import requests, nuitka" 2>nul
+if errorlevel 1 (
+    echo ERROR: Missing required dependencies. Run: pip install -r requirements.txt
+    pause
+    exit /b 1
+)
+
+if exist dist rmdir /s /q dist
+if exist build rmdir /s /q build
+
 nuitka --onefile --standalone --remove-output ^
     --windows-icon-from-ico=ICON.ico ^
     --show-progress --show-memory ^
@@ -14,17 +26,24 @@ nuitka --onefile --standalone --remove-output ^
     --include-data-files="components/app_install.py=components/app_install.py" ^
     --include-data-files="components/debloat_windows.py=components/debloat_windows.py" ^
     --include-data-files="components/__init__.py=components/__init__.py" ^
+    --include-data-files="components/utils.py=components/utils.py" ^
     --enable-plugin=tk-inter ^
-    --windows-company-name="sogik" ^
-    --windows-product-name="ZTalon" ^
-    --windows-file-version="1.0.0" ^
-    --windows-product-version="1.0.0" ^
-    --windows-file-description="Open Source Windows Optimization and Debloating Tool" ^
+    --windows-company-name="sogik Development" ^
+    --windows-product-name="ZTalon Windows Optimizer" ^
+    --windows-file-version="1.0.1.0" ^
+    --windows-product-version="1.0.1" ^
+    --windows-file-description="Enhanced Open Source Windows Optimization and Debloating Tool with SSL Support" ^
     --copyright="Copyright (c) 2025 sogik. Licensed under BSD-3-Clause." ^
-    --trademarks="ZTalon is a trademark of sogik" ^
     --windows-original-filename="ZTalon.exe" ^
     --windows-internal-name="ZTalon" ^
+    --python-flag=no_warnings ^
     init.py
+
+if not exist "dist\ZTalon.exe" (
+    echo ERROR: Build failed! ZTalon.exe not found.
+    pause
+    exit /b 1
+)
 
 echo.
 echo Build completed! Creating checksums...
@@ -38,7 +57,7 @@ echo.
 echo Checksums created:
 type ZTalon.exe.sha256
 echo.
-type ZTalon.exe.md5
 
 cd ..
+echo ✅ Build completed successfully!
 pause

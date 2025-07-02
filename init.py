@@ -12,29 +12,35 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from components import debloat_windows
 from components import app_install
-
-LOG_FILE = "ztalon.txt"
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    filemode='w'
+# Importar las nuevas utilidades
+from components.utils import (
+    setup_enhanced_logging,
+    check_admin_privileges,
+    get_secure_temp_dir,
+    get_system_info,
+    ZTalonError,
+    handle_error
 )
 
+enhanced_logger = setup_enhanced_logging("INFO")
+
+LOG_FILE = "ztalon.txt"
+
 def log_and_print(message):
-    """Function to log and display in console"""
-    logging.info(message)
+    """Function to log and display in console using enhanced logging"""
+    enhanced_logger.info(message)
     print(message)
 
 def show_error_popup(message, allow_continue=True):
     """Show error popup with option to continue or exit"""
+    enhanced_logger.error(f"ERROR: {message}")
     print(f"\n❌ ERROR: {message}")
     if allow_continue:
-        choice = safe_input("Press Enter to continue or 'q' to quit: ", "").lower()
+        choice = input("Press Enter to continue or 'q' to quit: ").lower()
         if choice == 'q':
             sys.exit(1)
     else:
-        safe_input("Press Enter to exit...")
+        input("Press Enter to exit...")
         sys.exit(1)
 
 def is_console_available():
@@ -150,14 +156,6 @@ def clear_screen():
     except:
         print("\n" * 50)  # Fallback if cls doesn't work
 
-def is_admin():
-    """Check if running as administrator"""
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except Exception as e:
-        logging.error(f"Admin check failed: {e}")
-        return False
-
 def run_as_admin():
     """Relaunch the program with administrator privileges"""
     if getattr(sys, 'frozen', False):
@@ -185,14 +183,75 @@ def run_as_admin():
         show_error_popup(f"Unable to elevate to Administrator:\n{e}", allow_continue=False)
         sys.exit(1)
 
-def ensure_admin():
-    """Ensure the program is running with administrator privileges"""
-    if not is_admin():
-        log_and_print("Administrator privileges required; relaunching with UAC prompt...")
-        run_as_admin()
-        sys.exit(0)
-    else:
-        log_and_print("Running with Administrator privileges.")
+def is_admin():
+    """Check if running as administrator using enhanced utils"""
+    return check_admin_privileges()
+
+
+def show_system_info(windows_info, gpu_info):
+    """Show comprehensive system information using enhanced utils"""
+    system_info = get_system_info()
+    
+    clear_screen()
+    print("=" * 70)
+    print("                SYSTEM INFORMATION")
+    print("=" * 70)
+    print()
+    
+    if 'os' in system_info:
+        print("🖥️  Operating System:")
+        print(f"   Platform: {system_info['os'].get('platform', 'Unknown')}")
+        print(f"   Architecture: {system_info['os'].get('architecture', ['Unknown'])[0]}")
+        print()
+    
+    if 'python' in system_info:
+        print("🐍 Python:")
+        print(f"   Version: {system_info['python'].get('version', 'Unknown')}")
+        print(f"   Implementation: {system_info['python'].get('implementation', 'Unknown')}")
+        print()
+    
+    if 'system' in system_info:
+        print("⚙️  System Resources:")
+        print(f"   CPU Cores: {system_info['system'].get('cpu_count', 'Unknown')}")
+        print(f"   Memory: {system_info['system'].get('memory_gb', 'Unknown')} GB")
+        print(f"   Free Disk Space: {system_info['system'].get('disk_free_gb', 'Unknown')} GB")
+        print()
+    
+    if 'ztalon' in system_info:
+        print("🛠️  ZTalon Status:")
+        admin_status = "✅ Yes" if system_info['ztalon'].get('admin_privileges') else "❌ No"
+        print(f"   Admin Privileges: {admin_status}")
+        print(f"   Temp Directory: {system_info['ztalon'].get('temp_dir', 'Unknown')}")
+        print(f"   SSL Support: ✅ Enhanced" if system_info['ztalon'].get('ssl_support') else "⚠️ Basic")
+        print()
+    
+    print("🎮 GPU Information:")
+    print(f"   Detected GPU: {gpu_info}")
+    print()
+    
+    print("=" * 70)
+
+
+@handle_error
+def check_temp_writable():
+    """Check if temp directory is writable using enhanced utils"""
+    secure_temp = get_secure_temp_dir()
+    
+    try:
+        test_path = os.path.join(secure_temp, "_write_test")
+        with open(test_path, "w") as f:
+            f.write("test")
+        os.remove(test_path)
+        log_and_print(f"✅ Secure temp directory ready: {secure_temp}")
+        return True
+    except Exception as e:
+        log_and_print(f"❌ Temp dir check failed: {e}")
+        show_error_popup(
+            f"Could not write files to {secure_temp}.\n"
+            "Please free up disk space or check permissions.",
+            allow_continue=True
+        )
+        return False
 
 def check_connectivity():
     """Check internet connectivity to required domains"""

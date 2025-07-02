@@ -11,12 +11,22 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
+# Importar las nuevas utilidades
+from .utils import (
+    download_with_ssl,
+    create_ssl_context,
+    verify_file_integrity,
+    get_secure_temp_dir,
+    handle_error,
+    ZTalonError
+)
+
 LOG_FILE = "ztalon.txt"
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    filemode='a'  # Append mode
+    filemode='a'
 )
 
 def log_and_print(message):
@@ -35,43 +45,30 @@ def show_error_popup(message, allow_continue=True):
         input("Press Enter to exit...")
         sys.exit(1)
 
+@handle_error
 def download_file_with_retries(url, dest_path, max_retries=3, timeout=30):
-    """Download file with retry mechanism and clean logging"""
-    for attempt in range(max_retries):
-        try:
-            # Solo log del inicio de descarga (solo nombre del archivo)
-            filename = url.split('/')[-1].replace('%20', ' ')
-            log_and_print(f"📥 Starting download: {filename}")
-            
-            response = requests.get(url, timeout=timeout, stream=True)
-            response.raise_for_status()
-            
-            total_size = int(response.headers.get('content-length', 0))
-            downloaded = 0
-            
-            with open(dest_path, "wb") as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        file.write(chunk)
-                        downloaded += len(chunk)
-                        # Mostrar progreso solo en consola, NO en logs
-                        if total_size > 0:
-                            percent = (downloaded / total_size) * 100
-                            print(f"\r📊 Progress: {percent:.1f}%", end="", flush=True)
-            
-            print()  # New line after progress
-            # Solo log del final de descarga
-            log_and_print("✅ Download completed successfully")
-            return True
-            
-        except Exception as e:
-            if attempt < max_retries - 1:
-                log_and_print(f"⚠️ Download failed, retrying...")
-                time.sleep(2)
-            else:
-                log_and_print(f"❌ Download failed after all attempts")
-                return False
-    return False
+    """
+    Download file with retry mechanism using enhanced SSL support
+    """
+    filename = url.split('/')[-1].replace('%20', ' ')
+    log_and_print(f"📥 Starting download: {filename}")
+    
+    # Usar la nueva función SSL mejorada
+    success = download_with_ssl(url, dest_path, timeout, max_retries)
+    
+    if success:
+        # Verificar integridad del archivo descargado
+        verification = verify_file_integrity(dest_path)
+        if verification['valid']:
+            log_and_print("✅ Download completed and verified successfully")
+            log_and_print(f"   File size: {verification['file_size']} bytes")
+            log_and_print(f"   SHA256: {verification['sha256'][:16]}...")
+        else:
+            log_and_print(f"⚠️ File verification failed: {verification.get('error', 'Unknown error')}")
+        return True
+    else:
+        log_and_print("❌ Download failed after all attempts")
+        return False
 
 def run_powershell_with_monitoring(command, script_path=None, timeout=300):
     """Run PowerShell command with clean logging"""
@@ -281,41 +278,48 @@ def replace_command_in_script(script_path, replace_commands):
         log_and_print(f"❌ Error modifying script: {e}")
         return False
 
+@handle_error
 def download_and_execute_script(script_url, script_name, replace_commands=None, timeout=300):
-    """Download and execute PowerShell script with error handling"""
+    """
+    Download and execute PowerShell script with enhanced error handling and SSL
+    """
+    log_and_print(f"🔄 Processing script: {script_name}")
+    
+    # Usar directorio temporal seguro
+    temp_dir = get_secure_temp_dir()
+    script_path = os.path.join(temp_dir, script_name)
+    
     try:
-        temp_dir = tempfile.gettempdir()
-        script_path = os.path.join(temp_dir, script_name)
+        if not download_file_with_retries(script_url, script_path, timeout=30):
+            raise ZTalonError(f"Failed to download script: {script_name}")
         
-        # Download script with retry mechanism
-        if not download_file_with_retries(script_url, script_path):
-            return False
+        if not os.path.exists(script_path) or os.path.getsize(script_path) == 0:
+            raise ZTalonError(f"Downloaded script is empty or missing: {script_name}")
         
-        # Modify script commands if needed
         if replace_commands:
-            log_and_print(f"🔧 Modifying script: {script_name}")
-            if not replace_command_in_script(script_path, replace_commands):
-                log_and_print("⚠️ Script modification failed, using original")
+            replace_command_in_script(script_path, replace_commands)
         
-        # Execute script and wait for completion
-        log_and_print(f"🚀 Running optimization: {script_name}")
-        success = run_powershell_with_monitoring(None, script_path, timeout)
+        log_and_print(f"🚀 Executing script: {script_name}")
+        success = run_powershell_with_monitoring(
+            f"& '{script_path}'", 
+            script_path, 
+            timeout
+        )
         
-        # Clean up temporary files
         try:
             os.remove(script_path)
         except:
             pass
-            
+        
         if success:
-            log_and_print(f"✅ Optimization completed: {script_name}")
+            log_and_print(f"✅ Script completed successfully: {script_name}")
         else:
-            log_and_print(f"⚠️ Optimization had issues: {script_name}")
-            
+            log_and_print(f"⚠️ Script completed with warnings: {script_name}")
+        
         return success
         
     except Exception as e:
-        log_and_print(f"❌ Error in optimization: {e}")
+        log_and_print(f"❌ Error executing script {script_name}: {e}")
         return False
 
 # Enhanced optimization functions with FIXED URLs
