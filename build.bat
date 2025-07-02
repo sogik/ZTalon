@@ -2,16 +2,20 @@
 echo Building ZTalon with enhanced compatibility...
 
 :: Check for required dependencies
-python -c "import requests, nuitka" 2>nul
+python -c "import requests, nuitka, certifi" 2>nul
 if errorlevel 1 (
     echo ERROR: Missing required dependencies. Run: pip install -r requirements.txt
     pause
     exit /b 1
 )
 
+echo Checking Nuitka version...
+python -c "import nuitka; print(f'Nuitka version: {nuitka.__version__}')"
+
 if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
 
+echo Starting Nuitka compilation...
 nuitka --onefile --standalone --remove-output ^
     --windows-icon-from-ico=ICON.ico ^
     --show-progress --show-memory ^
@@ -32,10 +36,8 @@ nuitka --onefile --standalone --remove-output ^
     --windows-product-name="ZTalon Windows Optimizer" ^
     --windows-file-version="1.0.1.0" ^
     --windows-product-version="1.0.1" ^
-    --windows-file-description="Enhanced Open Source Windows Optimization and Debloating Tool with SSL Support" ^
+    --windows-file-description="Enhanced Open Source Windows Optimization and Debloating Tool" ^
     --copyright="Copyright (c) 2025 sogik. Licensed under BSD-3-Clause." ^
-    --windows-original-filename="ZTalon.exe" ^
-    --windows-internal-name="ZTalon" ^
     --python-flag=no_warnings ^
     init.py
 
