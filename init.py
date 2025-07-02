@@ -187,6 +187,15 @@ def is_admin():
     """Check if running as administrator using enhanced utils"""
     return check_admin_privileges()
 
+def ensure_admin():
+    """Ensure the program is running with administrator privileges"""
+    if not is_admin():
+        log_and_print("Administrator privileges required; relaunching with UAC prompt...")
+        run_as_admin()
+        sys.exit(0)
+    else:
+        log_and_print("Running with Administrator privileges.")
+
 
 def show_system_info(windows_info, gpu_info):
     """Show comprehensive system information using enhanced utils"""
