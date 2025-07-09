@@ -284,7 +284,9 @@ def check_connectivity():
                 log_and_print(f"✅ Connectivity check passed: {url}")
         except Exception as e:
             log_and_print(f"⚠️ Connectivity issue with {url}: {e}")
-            if "github.com" in url:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            if parsed_url.hostname == "github.com":
                 # Si GitHub falla es más crítico
                 show_error_popup(
                     f"Could not reach GitHub. Please check your internet connection.\n"
