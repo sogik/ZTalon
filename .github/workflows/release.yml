@@ -1,0 +1,27 @@
+name: Build and Release ZTalon
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build_release:
+    uses: ./.github/workflows/build.yml
+
+  create_release:
+    needs: build_release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ZTalon-exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ZTalon.exe
+            ZTalon.exe.sha256
+            ZTalon.exe.md5
