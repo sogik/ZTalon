@@ -1,5 +1,4 @@
-name: Build ZTalon Windows
-
+name: Build
 on:
   push:
     branches: [main]

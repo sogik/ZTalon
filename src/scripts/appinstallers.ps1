@@ -399,7 +399,7 @@ show-menu
 
 while ($true) {
     $choice = Read-Host " "
-    if ($choice -match '^(1[0-2]|[1-9])$' ) {
+    if ($choice -match '^(1[0-4]|[1-9])$' ) {
         switch ($choice ) {
             1 {
                 Clear-Host
@@ -580,5 +580,5 @@ while ($true) {
 
         }
     }
-    else { Write-Host "Invalid input. Please select a valid option (1 - 12)." }
+    else { Write-Host "Invalid input. Please select a valid option (1 - 14)." }
 }
