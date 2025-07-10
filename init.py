@@ -1185,6 +1185,8 @@ def main():
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
                             ("Autoruns optimization", debloat_windows.run_autoruns),
                             ("Network optimization", debloat_windows.apply_networkoptimization),
+                            ("Disable WPBT (Platform Binary Table)", debloat_windows.disable_wpbt),
+                            ("Disable folder type discovery in Explorer", debloat_windows.disable_folder_discovery),
                             ("System final cleanup", debloat_windows.finalize_installation)
                         ]
                         
