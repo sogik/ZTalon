@@ -1012,6 +1012,10 @@ def run_selected_optimizations(selected_indices, optimizations):
             optimization_functions.append((opt_name, debloat_windows.run_autoruns))
         elif "Network optimization" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.apply_networkoptimization))
+        elif "Disable WPBT (Platform Binary Table)" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.disable_wpbt))
+        elif "Disable folder type discovery in Explorer" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.disable_folder_discovery))
     
     # Always add system cleanup as final step
     if optimization_functions:
