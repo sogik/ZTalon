@@ -468,7 +468,9 @@ def show_optimization_menu():
         ("Uninstall Edge", "Edge uninstaller"),
         ("Background apps optimization", "Background apps optimization"),
         ("Autoruns optimization", "Autoruns optimization"),
-        ("Network optimization", "Network optimization")
+        ("Network optimization", "Network optimization"),
+        ("Disable WPBT (Platform Binary Table)", "Disable WPBT"),
+        ("Disable folder type discovery in Explorer", "Disable folder discovery")
     ]
     
     clear_screen()
@@ -1125,6 +1127,8 @@ def main():
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
                             ("Autoruns optimization", debloat_windows.run_autoruns),
                             ("Network optimization", debloat_windows.apply_networkoptimization),
+                            ("Disable WPBT (Platform Binary Table)", debloat_windows.disable_wpbt),
+                            ("Disable folder type discovery in Explorer", debloat_windows.disable_folder_discovery),
                             ("System final cleanup", debloat_windows.finalize_installation)
                         ]
                         

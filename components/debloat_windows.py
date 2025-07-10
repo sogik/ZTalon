@@ -10,6 +10,7 @@ import time
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import winreg
 
 # Importar las nuevas utilidades
 from .utils import (
@@ -566,7 +567,7 @@ def run_external_debloat_scripts():
         {
             "name": "ChrisTitusTech WinUtil",
             # Usar GitHub directamente en lugar del redirect
-            "command": 'irm https://raw.githubusercontent.com/ChrisTitusTech/winutil/main/winutil.ps1 | iex',
+            "command": 'irm https://christitus.com/win | iex',
             "timeout": 1800
         },
         {
@@ -676,6 +677,42 @@ def run_advanced_cleanup():
                 os.remove(script_path)
         except:
             pass
+
+def disable_wpbt():
+    """Disable Windows Platform Binary Table (WPBT) for security"""
+    try:
+        key_path = r"SYSTEM\CurrentControlSet\Control\FirmwareResources\{B9816C50-7A49-4A2A-8B2E-5A6E2E7B82B6}"
+        winreg.DeleteKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+        log_and_print("✅ WPBT successfully disabled.")
+        return True
+    except FileNotFoundError:
+        log_and_print("⚠️ WPBT key not found or already disabled.")
+        return True
+    except Exception as e:
+        log_and_print(f"❌ Could not disable WPBT: {e}")
+        return False
+
+def disable_folder_discovery():
+    """Disable automatic folder type discovery in File Explorer"""
+    try:
+        # Remove AllFolders property if exists
+        bags_key = r"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags"
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, bags_key, 0, winreg.KEY_SET_VALUE) as key:
+            try:
+                winreg.DeleteValue(key, "AllFolders")
+            except FileNotFoundError:
+                pass  # Already removed
+
+        # Set FolderType to NotSpecified
+        shell_key = r"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell"
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, shell_key) as key:
+            winreg.SetValueEx(key, "FolderType", 0, winreg.REG_SZ, "NotSpecified")
+
+        log_and_print("✅ Automatic folder type discovery disabled.")
+        return True
+    except Exception as e:
+        log_and_print(f"❌ Could not disable folder discovery: {e}")
+        return False
 
 def run_final_cleanup():
     """Final cleanup with all methods combined"""
