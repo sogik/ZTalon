@@ -281,49 +281,43 @@ def replace_command_in_script(script_path, replace_commands):
 
 @handle_error
 def download_and_execute_script(script_url, script_name, replace_commands=None, timeout=300):
-    """
-    Download and execute PowerShell script with enhanced error handling and SSL
-    """
-    log_and_print(f"🔄 Processing script: {script_name}")
-    
-    # Usar directorio temporal seguro
+
+    import os
+    import subprocess
+
     temp_dir = get_secure_temp_dir()
     script_path = os.path.join(temp_dir, script_name)
-    
-    try:
-        if not download_file_with_retries(script_url, script_path, timeout=30):
-            raise ZTalonError(f"Failed to download script: {script_name}")
-        
-        if not os.path.exists(script_path) or os.path.getsize(script_path) == 0:
-            raise ZTalonError(f"Downloaded script is empty or missing: {script_name}")
-        
-        if replace_commands:
-            replace_command_in_script(script_path, replace_commands)
-        
-        log_and_print(f"🚀 Executing script: {script_name}")
-        success = run_powershell_with_monitoring(
-            f"& '{script_path}'", 
-            script_path, 
-            timeout
-        )
-        
-        try:
-            os.remove(script_path)
-        except:
-            pass
-        
-        if success:
-            log_and_print(f"✅ Script completed successfully: {script_name}")
-        else:
-            log_and_print(f"⚠️ Script completed with warnings: {script_name}")
-        
-        return success
-        
-    except Exception as e:
-        log_and_print(f"❌ Error executing script {script_name}: {e}")
+
+    if not download_with_ssl(script_url, script_path, timeout=timeout):
+        log_and_print(f"❌ Error al descargar el script: {script_url}")
         return False
 
-# Enhanced optimization functions with FIXED URLs
+    if replace_commands:
+        try:
+            with open(script_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            for old, new in replace_commands.items():
+                content = content.replace(old, new)
+            with open(script_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            log_and_print(f"❌ Error al modificar el script: {e}")
+            return False
+
+    try:
+        completed = subprocess.run(
+            ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", script_path],
+            check=True,
+            timeout=timeout
+        )
+        log_and_print(f"✅ Script ejecutado correctamente: {script_name}")
+        return True
+    except subprocess.CalledProcessError as e:
+        log_and_print(f"❌ Error al ejecutar el script: {e}")
+        return False
+    except subprocess.TimeoutExpired:
+        log_and_print(f"❌ El script tardó demasiado y fue cancelado: {script_name}")
+        return False
 
 def run_registrytweak():
     """Apply registry tweaks with enhanced error handling"""
