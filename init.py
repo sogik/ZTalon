@@ -1049,9 +1049,22 @@ def run_selected_optimizations(selected_indices, optimizations):
         elif "Disable folder type discovery in Explorer" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.disable_folder_discovery))
     
+    # Force Defender optimize to be the last destructive step
+    defender_steps = [
+        item for item in optimization_functions
+        if "Defender optimize" in item[0]
+    ]
+    optimization_functions = [
+        item for item in optimization_functions
+        if "Defender optimize" not in item[0]
+    ]
+
     # Always add system cleanup as final step
     if optimization_functions:
         optimization_functions.append(("System final cleanup", debloat_windows.finalize_installation))
+
+    if defender_steps:
+        optimization_functions.extend(defender_steps)
     
     # Display confirmation before execution
     clear_screen()
@@ -1197,6 +1210,8 @@ def main():
                                 ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
                                 ("Defender optimize", debloat_windows.run_defender_optimize),
                             ]
+                            defender_steps = [x for x in extra_pipeline if "Defender optimize" in x[0]]
+                            extra_pipeline = [x for x in extra_pipeline if "Defender optimize" not in x[0]] + defender_steps
                             total_steps = len(extra_pipeline)
                             successful = 0
                             for i, (name, func) in enumerate(extra_pipeline, 1):
@@ -1276,6 +1291,8 @@ def main():
                                 ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
                                 ("Defender optimize", debloat_windows.run_defender_optimize),
                             ]
+                            defender_steps = [x for x in extra_pipeline if "Defender optimize" in x[0]]
+                            extra_pipeline = [x for x in extra_pipeline if "Defender optimize" not in x[0]] + defender_steps
                             total_steps = len(extra_pipeline)
                             successful = 0
                             for i, (name, func) in enumerate(extra_pipeline, 1):
