@@ -17,7 +17,6 @@ import tempfile
 import hashlib
 import time
 from typing import Optional, Dict, Any, Callable
-import requests
 
 # Enhanced SSL Context Creation
 def create_ssl_context() -> ssl.SSLContext:

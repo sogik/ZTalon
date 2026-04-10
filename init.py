@@ -345,16 +345,12 @@ def show_app_install_menu():
 
 def show_optimization_menu():
     """Shows available optimization options"""
-    optimizations = [
+    normal_optimizations = [
         ("Driver debloat settings AMD", "Driver debloat settings AMD"),
         ("AMD settings", "AMD settings"),
         ("DirectX installation", "DirectX installation"),
         ("C++ installation", "C++ installation"),
         ("Start menu optimization", "Start menu optimization"),
-        ("Spectre meltdown optimization (DANGEROUS)", "Spectre meltdown optimization"),
-        ("UAC optimization (DANGEROUS)", "UAC optimization"),
-        ("Core Isolation optimization (DANGEROUS)", "Core Isolation optimization"),
-        ("Defender optimize (DANGEROUS)", "Defender optimize"),
         ("Uninstall Copilot", "Copilot uninstaller"),
         ("Uninstall Widgets", "Widgets uninstaller"),
         ("GameBar optimization", "Gamebar optimization"),
@@ -369,6 +365,15 @@ def show_optimization_menu():
         ("Disable WPBT (Platform Binary Table)", "Disable WPBT"),
         ("Disable folder type discovery in Explorer", "Disable folder discovery")
     ]
+
+    dangerous_optimizations = [
+        ("Spectre meltdown optimization (DANGEROUS)", "Spectre meltdown optimization"),
+        ("UAC optimization (DANGEROUS)", "UAC optimization"),
+        ("Core Isolation optimization (DANGEROUS)", "Core Isolation optimization"),
+        ("Defender optimize (DANGEROUS)", "Defender optimize"),
+    ]
+
+    optimizations = normal_optimizations + dangerous_optimizations
     
     clear_screen()
     print("=" * 70)
@@ -376,7 +381,11 @@ def show_optimization_menu():
     print("=" * 70)
     print()
     
-    for i, (english, _) in enumerate(optimizations, 1):
+    for i, (english, _) in enumerate(normal_optimizations, 1):
+        print(f"{i:2d}. {english}")
+
+    print("---- DANGEROUS OPTIONS ----")
+    for i, (english, _) in enumerate(dangerous_optimizations, len(normal_optimizations) + 1):
         print(f"{i:2d}. {english}")
     
     print()
