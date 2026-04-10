@@ -210,11 +210,10 @@ def get_system_info() -> Dict[str, Any]:
     
     try:
         # Try to import psutil, but don't fail if not available
+        psutil_mod = None
         try:
-            import psutil
-            has_psutil = True
+            import psutil as psutil_mod
         except ImportError:
-            has_psutil = False
             logging.debug("psutil not available, using basic system info")
         
         info = {
@@ -242,10 +241,10 @@ def get_system_info() -> Dict[str, Any]:
         }
         
         # Add psutil info if available
-        if has_psutil:
+        if psutil_mod is not None:
             try:
-                info['system']['memory_gb'] = round(psutil.virtual_memory().total / (1024**3), 2)
-                info['system']['disk_free_gb'] = round(psutil.disk_usage('/').free / (1024**3), 2)
+                info['system']['memory_gb'] = round(psutil_mod.virtual_memory().total / (1024**3), 2)
+                info['system']['disk_free_gb'] = round(psutil_mod.disk_usage('/').free / (1024**3), 2)
             except Exception as e:
                 logging.debug(f"Could not get psutil info: {e}")
                 info['system']['memory_gb'] = 'N/A'
