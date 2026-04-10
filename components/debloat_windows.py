@@ -739,7 +739,7 @@ def run_advanced_cleanup():
         try:
             if script_path is not None and os.path.exists(script_path):
                 os.remove(script_path)
-        except:
+        except Exception:
             pass
 
 def disable_wpbt():

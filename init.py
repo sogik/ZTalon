@@ -52,7 +52,7 @@ def is_console_available():
     try:
         # Try to get console window handle
         return ctypes.windll.kernel32.GetConsoleWindow() != 0
-    except:
+    except Exception:
         return False
 
 def safe_input(prompt="", default=""):
@@ -119,7 +119,7 @@ def clear_screen():
     """Clears the screen"""
     try:
         os.system('cls' if os.name == 'nt' else 'clear')
-    except:
+    except Exception:
         print("\n" * 50)  # Fallback if cls doesn't work
 
 def run_as_admin():
@@ -183,7 +183,7 @@ def check_connectivity():
             if parsed_url.hostname == "github.com":
                 # Si GitHub falla es más crítico
                 show_error_popup(
-                    f"Could not reach GitHub. Please check your internet connection.\n"
+                    "Could not reach GitHub. Please check your internet connection.\n"
                     "GitHub is required to download optimization scripts.",
                     allow_continue=True
                 )
@@ -517,7 +517,7 @@ def get_gpu_info_advanced():
                                     'type': gpu_type
                                 })
                                 log_and_print(f"✅ GPU detected: {name} ({gpu_type})")
-                        except:
+                        except Exception:
                             continue
         except Exception as e:
             log_and_print(f"⚠️ PowerShell method failed: {e}")
