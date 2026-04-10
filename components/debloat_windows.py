@@ -455,16 +455,31 @@ def apply_amdoptimization():
     """Apply AMD optimizations with enhanced error handling"""
     log_and_print("🔴 Starting AMD optimization...")
     script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/5%20Amd%20Settings.ps1"
-    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    replace_commands = {
+        '$choice = Read-Host " "': '$choice = 1',
+        'shutdown -r -t 00': 'Write-Host "Skipping automatic reboot (patched mode)"',
+        'Restart-Computer': 'Write-Host "Skipping Restart-Computer (patched mode)"',
+    }
     return download_and_execute_script(script_url, "amdsettings.ps1", replace_commands)
 
 def run_driver_debloat_settings_amd():
-    """Run graphics driver debloat/settings script forced to AMD flow"""
+    """Run graphics driver debloat/settings script in AMD debloat/settings mode."""
     log_and_print("🧰 Starting driver debloat/settings (AMD mode)...")
     script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/3%20Driver%20Install%20Debloat%20%26%20Settings.ps1"
     replace_commands = {
         '$choice = Read-Host " "': '$choice = "2"',
         'Pause': 'Write-Host "Skipping pause in automated mode"',
+        'Start-Process "https://www.amd.com/en/support/download/drivers.html"': 'Write-Host "Skipping AMD driver download (patched mode)"',
+        'Add-Type -AssemblyName System.Windows.Forms': 'Write-Host "Skipping OpenFileDialog in patched mode"',
+        '$Dialog = New-Object System.Windows.Forms.OpenFileDialog': '$InstallFile = $null',
+        '$Dialog.Filter = "All Files (*.*)|*.*"': '$InstallFile = $null',
+        '$Dialog.ShowDialog() | Out-Null': 'Write-Host "Skipping file picker (patched mode)"',
+        '$InstallFile = $Dialog.FileName': '$InstallFile = $null',
+        '& "$env:SystemDrive\\Program Files\\7-Zip\\7z.exe" x "$InstallFile" -o"$env:SystemRoot\\Temp\\amddriver" -y | Out-Null': 'Write-Host "Skipping AMD driver extraction (patched mode)"',
+        'Start-Process -Wait "$env:SystemRoot\\Temp\\amddriver\\Bin64\\ATISetup.exe" -ArgumentList "-INSTALL -VIEW:2" -WindowStyle Hidden': 'Write-Host "Skipping AMD driver installer launch (patched mode)"',
+        'Remove-Item "$InstallFile" -Force -ErrorAction SilentlyContinue | Out-Null': 'Write-Host "Skipping installer file removal (patched mode)"',
+        'shutdown -r -t 00': 'Write-Host "Skipping automatic reboot (patched mode)"',
+        'Restart-Computer': 'Write-Host "Skipping Restart-Computer (patched mode)"',
     }
     return download_and_execute_script(script_url, "driver_debloat_settings.ps1", replace_commands, timeout=1800)
 
