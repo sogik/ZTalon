@@ -149,49 +149,63 @@ def set_registry_value(root_key, key_path, value_name, value, value_type):
         log_and_print(f"❌ Failed to set registry value {key_path}\\{value_name}: {e}")
         return False
 
-def apply_registry_changes():
-    """Apply system registry changes with user interaction"""
+def apply_registry_changes(interactive=True, taskbar_alignment=None, apply_black_taskbar=None):
+    """
+    Apply system registry changes.
+    
+    Args:
+        interactive (bool): If True, asks user for input via CLI. If False, uses provided arguments.
+        taskbar_alignment (int): 0 for Left, 1 for Center. Required if interactive=False.
+        apply_black_taskbar (bool): True to apply black taskbar settings. Required if interactive=False.
+    """
     log_and_print("🔧 Applying registry changes...")
     
-    # Prompt for taskbar position preference
-    print("\n" + "="*60)
-    print("                TASKBAR POSITION OPTION")
-    print("="*60)
-    print()
-    print("Where do you want the taskbar icons to be positioned?")
-    print()
-    print("1. Left (classic position)")
-    print("2. Center (Windows 11 default)")
-    print()
-    
-    try:
-        from init import safe_input
-        position_choice = safe_input("Enter your choice (1-2): ", "1").strip()
-    except ImportError:
-        position_choice = input("Enter your choice (1-2): ").strip()
-    
-    # Configure taskbar alignment: 0 = Left, 1 = Center
-    taskbar_alignment = 1 if position_choice == "2" else 0
-    
-    # Prompt for taskbar color customization
-    print("\n" + "="*60)
-    print("                TASKBAR COLOR OPTION")
-    print("="*60)
-    print()
-    print("Do you want to set the taskbar to black color?")
-    print("⚠️  (This may cause visual issues on some systems)")
-    print()
-    print("1. Yes, apply black taskbar")
-    print("2. No, keep current colors")
-    print()
-    
-    try:
-        taskbar_choice = safe_input("Enter your choice (1-2): ", "2").strip()
-    except NameError:
-        taskbar_choice = input("Enter your choice (1-2): ").strip()
-    
-    apply_black_taskbar = taskbar_choice == "1"
-    
+    if interactive:
+        # Prompt for taskbar position preference
+        print("\n" + "="*60)
+        print("                TASKBAR POSITION OPTION")
+        print("="*60)
+        print()
+        print("Where do you want the taskbar icons to be positioned?")
+        print()
+        print("1. Left (classic position)")
+        print("2. Center (Windows 11 default)")
+        print()
+        
+        try:
+            from init import safe_input
+            position_choice = safe_input("Enter your choice (1-2): ", "1").strip()
+        except ImportError:
+            position_choice = input("Enter your choice (1-2): ").strip()
+        
+        # Configure taskbar alignment: 0 = Left, 1 = Center
+        taskbar_alignment = 1 if position_choice == "2" else 0
+        
+        # Prompt for taskbar color customization
+        print("\n" + "="*60)
+        print("                TASKBAR COLOR OPTION")
+        print("="*60)
+        print()
+        print("Do you want to set the taskbar to black color?")
+        print("⚠️  (This may cause visual issues on some systems)")
+        print()
+        print("1. Yes, apply black taskbar")
+        print("2. No, keep current colors")
+        print()
+        
+        try:
+            taskbar_choice = safe_input("Enter your choice (1-2): ", "2").strip()
+        except NameError:
+            taskbar_choice = input("Enter your choice (1-2): ").strip()
+        
+        apply_black_taskbar = taskbar_choice == "1"
+    else:
+        # Validate arguments for non-interactive mode
+        if taskbar_alignment is None:
+            taskbar_alignment = 0 # Default to Left
+        if apply_black_taskbar is None:
+            apply_black_taskbar = False # Default to No
+
     # Core system registry modifications
     registry_modifications = [
         # Taskbar configuration
@@ -208,6 +222,11 @@ def apply_registry_changes():
         (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ExtendedUIHoverTime", winreg.REG_DWORD, 1),
         # File extension visibility
         (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "HideFileExt", winreg.REG_DWORD, 0),
+        # Disable AI integrations (Talon 2.1.0 feature)
+        (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Notepad", "DisableAI", winreg.REG_DWORD, 1),
+        (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Paint", "DisableAI", winreg.REG_DWORD, 1),
+        # Disable Office 365 ads in Settings (Talon 2.1.0 feature)
+        (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-310093Enabled", winreg.REG_DWORD, 0),
     ]
     
     # Log user configuration choices
@@ -319,17 +338,10 @@ def download_and_execute_script(script_url, script_name, replace_commands=None, 
         log_and_print(f"❌ El script tardó demasiado y fue cancelado: {script_name}")
         return False
 
-def run_registrytweak():
-    """Apply registry tweaks with enhanced error handling"""
-    log_and_print("🔧 Starting registry tweaks...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/12%20Registry.ps1"
-    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
-    return download_and_execute_script(script_url, "Registry.ps1", replace_commands)
-
 def install_timerresolution():
     """Install Timer Resolution with enhanced error handling"""
     log_and_print("⏱️ Starting Timer Resolution installation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/10%20Timer%20Resolution.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/30%20Timer%20Resolution.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "TimerResolution.ps1", replace_commands)
 
@@ -339,8 +351,7 @@ def run_startmenuoptimization():
     
     # Try multiple URLs for the script
     script_urls = [
-        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/1%20Start%20Menu%20Taskbar%20Clean.ps1",
-        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/1%20Start%20Menu%20Taskbar%20Clean.ps1"
+        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/1%20Start%20Menu%20Taskbar.ps1"
     ]
     
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
@@ -383,97 +394,195 @@ def run_startmenuoptimization():
 def run_autoruns():
     """Optimize autoruns with enhanced error handling"""
     log_and_print("🚀 Starting autoruns optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/21%20Autoruns.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/34%20Autoruns%20Startup%20Tasks%20%26%20Apps%20Check.ps1"
     return download_and_execute_script(script_url, "Autoruns.ps1")
 
 def run_backgroundapps():
     """Optimize background apps with enhanced error handling"""
     log_and_print("📱 Starting background apps optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/3%20Setup/10%20Background%20Apps.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/3%20Setup/9%20Background%20Apps.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "BackgroundApps.ps1", replace_commands)
 
 def run_copilotuninstaller():
     """Uninstall Copilot with enhanced error handling"""
     log_and_print("🤖 Starting Copilot uninstallation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/3%20Copilot.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/9%20Copilot.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "copilotuninstaller.ps1", replace_commands)
 
 def run_widgetsuninstaller():
     """Uninstall Widgets with enhanced error handling"""
     log_and_print("🧩 Starting Widgets uninstallation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/4%20Widgets.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/8%20Widgets.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "widgetsuninstaller.ps1", replace_commands)
 
 def run_gamebaroptimization():
     """Optimize GameBar with enhanced error handling"""
     log_and_print("🎮 Starting GameBar optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/6%20Gamebar.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/19%20Gamebar.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "gamebar.ps1", replace_commands)
 
 def apply_powerplan():
     """Apply power plan optimization with enhanced error handling"""
     log_and_print("⚡ Starting power plan optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/9%20Power%20Plan.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/29%20Power%20Plan.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "powerplan.ps1", replace_commands)
 
 def apply_signoutlockscreen():
     """Optimize lock screen with enhanced error handling"""
     log_and_print("🔒 Starting lock screen optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/13%20Signout%20Lockscreen.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/6%20Signout%20Lockscreen%20Wallpaper%20Black.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "lockscreensignout.ps1", replace_commands)
 
 def run_edgeuninstaller():
     """Uninstall Edge with enhanced error handling"""
     log_and_print("🌐 Starting Edge uninstallation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/14%20Edge.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/20%20Edge%20%26%20WebView.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "edgeuninstaller.ps1", replace_commands)
 
 def apply_networkoptimization():
-    """Apply network optimization with enhanced error handling"""
+    """Apply network optimization with split scripts"""
     log_and_print("🌐 Starting network optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/8%20Advanced/1%20Network%20Adapter.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
-    return download_and_execute_script(script_url, "networkoptimization.ps1", replace_commands)
+    first_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/26%20Network%20Adapter%20Power%20Savings%20%26%20Wake.ps1"
+    second_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/27%20Network%20IPv4%20Only.ps1"
+
+    first_ok = download_and_execute_script(first_url, "network_adapter_power_wake.ps1", replace_commands)
+    second_ok = download_and_execute_script(second_url, "network_ipv4_only.ps1", replace_commands)
+    return first_ok and second_ok
 
 def apply_msimode():
     """Apply MSI mode optimization with enhanced error handling"""
     log_and_print("🔧 Starting MSI mode optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/5%20Graphics/9%20Msi%20Mode.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/9%20Msi%20Mode.ps1"
     replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
     return download_and_execute_script(script_url, "msimode.ps1", replace_commands)
 
 def run_directxinstallation():
     """Install DirectX with enhanced error handling"""
     log_and_print("📊 Starting DirectX installation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/5%20Graphics/10%20Direct%20X.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/10%20DirectX.ps1"
     return download_and_execute_script(script_url, "directx.ps1", timeout=600)  # Longer timeout for installation
 
 def run_cinstallation():
     """Install C++ redistributables with enhanced error handling"""
     log_and_print("🔧 Starting C++ redistributables installation...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/5%20Graphics/11%20C%2B%2B.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/11%20C%2B%2B.ps1"
     return download_and_execute_script(script_url, "c++.ps1", timeout=600)  # Longer timeout for installation
-
-def apply_nvidiaoptimization():
-    """Apply NVIDIA optimizations with enhanced error handling"""
-    log_and_print("🎮 Starting NVIDIA optimization...")
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/5%20Graphics/5%20Nvidia%20Settings.ps1"
-    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
-    return download_and_execute_script(script_url, "nvidiasettings.ps1", replace_commands)
 
 def apply_amdoptimization():
     """Apply AMD optimizations with enhanced error handling"""
     log_and_print("🔴 Starting AMD optimization...")
-    # Note: Add AMD-specific optimizations here when available
-    log_and_print("⚠️ AMD-specific optimizations not yet implemented")
-    return True
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/5%20Amd%20Settings.ps1"
+    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    return download_and_execute_script(script_url, "amdsettings.ps1", replace_commands)
+
+def run_driver_debloat_settings_amd():
+    """Run graphics driver debloat/settings script forced to AMD flow"""
+    log_and_print("🧰 Starting driver debloat/settings (AMD mode)...")
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/5%20Graphics/3%20Driver%20Install%20Debloat%20%26%20Settings.ps1"
+    replace_commands = {
+        '$choice = Read-Host " "': '$choice = "2"',
+        'Pause': 'Write-Host "Skipping pause in automated mode"',
+    }
+    return download_and_execute_script(script_url, "driver_debloat_settings.ps1", replace_commands, timeout=1800)
+
+def run_spectre_meltdown():
+    """Apply Spectre/Meltdown mitigations"""
+    log_and_print("🛡️ Starting Spectre/Meltdown optimization...")
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/8%20Advanced/3%20Spectre%20Meltdown.ps1"
+    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    return download_and_execute_script(script_url, "spectre_meltdown.ps1", replace_commands)
+
+def run_uac_optimization():
+    """Apply UAC optimization"""
+    log_and_print("🔐 Starting UAC optimization...")
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/31%20UAC.ps1"
+    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    return download_and_execute_script(script_url, "uac.ps1", replace_commands)
+
+def run_core_isolation_optimization():
+    """Apply Core Isolation optimization"""
+    log_and_print("🧱 Starting Core Isolation optimization...")
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/32%20Core%20Isolation.ps1"
+    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    return download_and_execute_script(script_url, "core_isolation.ps1", replace_commands)
+
+def run_defender_optimize():
+    """Apply Defender optimization"""
+    log_and_print("🛡️ Starting Defender optimization...")
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/33%20Defender%20Optimize.ps1"
+    replace_commands = {'$choice = Read-Host " "': '$choice = 1'}
+    return download_and_execute_script(script_url, "defender_optimize.ps1", replace_commands)
+
+def get_gpu_info_advanced():
+    """
+    Get advanced GPU information using PowerShell and WMI.
+    Returns a list of dictionaries containing GPU details.
+    """
+    try:
+        cmd = [
+            "powershell", "-NoProfile", "-Command",
+            "Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, VideoProcessor, AdapterRAM | ConvertTo-Json -Compress"
+        ]
+        
+        # Run command with creationflags to hide window
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            startupinfo=startupinfo
+        )
+        stdout, stderr = process.communicate(timeout=10)
+        
+        if process.returncode != 0:
+            log_and_print(f"⚠️ Error getting GPU info: {stderr}")
+            return []
+            
+        if not stdout.strip():
+            return []
+            
+        # Parse JSON output
+        data = json.loads(stdout)
+        
+        # Handle single object vs list
+        if isinstance(data, dict):
+            data = [data]
+            
+        gpu_info = []
+        for item in data:
+            name = item.get('Name', 'Unknown GPU')
+            driver = item.get('DriverVersion', 'Unknown')
+            processor = item.get('VideoProcessor', 'Unknown')
+            
+            # Determine type based on name
+            gpu_type = "Unknown"
+            name_lower = name.lower()
+            if "amd" in name_lower or "radeon" in name_lower:
+                gpu_type = "AMD"
+                
+            gpu_info.append({
+                'name': name,
+                'type': gpu_type,
+                'driver_version': driver,
+                'processor': processor
+            })
+            
+        return gpu_info
+        
+    except Exception as e:
+        log_and_print(f"❌ Failed to get GPU info: {e}")
+        return []
 
 def apply_gpuregistryoptimization(gpu_info):
     """Apply GPU-specific registry optimizations"""
@@ -504,21 +613,6 @@ def apply_gpuregistryoptimization(gpu_info):
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "PP_ThermalAutoThrottlingEnable", winreg.REG_DWORD, 0),
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "DisableDMACopy", winreg.REG_DWORD, 1),
                 (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "DisableBlockWrite", winreg.REG_DWORD, 0),
-            ]
-        elif "nvidia" in gpu_type_lower:
-            log_and_print("🟢 Applying NVIDIA-specific registry optimizations...")
-            registry_modifications = [
-                # NVIDIA-specific optimizations
-                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "DisablePreemption", winreg.REG_DWORD, 1),
-                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "DisableCudaContextPreemption", winreg.REG_DWORD, 1),
-                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "EnableMsHybrid", winreg.REG_DWORD, 0),
-            ]
-        elif "intel" in gpu_type_lower:
-            log_and_print("🔵 Applying Intel-specific registry optimizations...")
-            registry_modifications = [
-                # Intel-specific optimizations
-                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "Acceleration.Level", winreg.REG_DWORD, 0),
-                (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000", "DisablePowerManagement", winreg.REG_DWORD, 1),
             ]
         else:
             log_and_print("🔧 Applying generic GPU optimizations...")
@@ -713,7 +807,7 @@ def run_final_cleanup():
     log_and_print("🧹 Starting comprehensive final cleanup...")
     
     # Run the existing online cleanup script
-    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/22%20Cleanup.ps1"
+    script_url = "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/35%20Cleanup.ps1"
     
     online_success = download_and_execute_script(script_url, "Cleanup.ps1")
     
@@ -852,7 +946,7 @@ def run_threaded_optimizations(optimization_list, max_workers=2):
 def test_connectivity():
     """Test connectivity to required URLs"""
     test_urls = [
-        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate-Windows-Optimization-Guide/main/6%20Windows/12%20Registry.ps1",
+        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/19%20Gamebar.ps1",
         "https://raw.githubusercontent.com/ChrisTitusTech/winutil/main/winutil.ps1",
         "https://debloat.raphi.re/"
     ]

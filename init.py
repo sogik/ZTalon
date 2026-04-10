@@ -453,17 +453,21 @@ def show_app_install_menu():
 def show_optimization_menu():
     """Shows available optimization options"""
     optimizations = [
-        ("GPU registry optimization", "GPU registry optimization"),
+        ("Driver debloat settings AMD", "Driver debloat settings AMD"),
+        ("AMD settings", "AMD settings"),
         ("DirectX installation", "DirectX installation"),
         ("C++ installation", "C++ installation"),
         ("Start menu optimization", "Start menu optimization"),
+        ("Spectre meltdown optimization", "Spectre meltdown optimization"),
         ("Uninstall Copilot", "Copilot uninstaller"),
         ("Uninstall Widgets", "Widgets uninstaller"),
         ("GameBar optimization", "Gamebar optimization"),
         ("Configure power plan", "Power plan"),
         ("Install Timer Resolution", "Timer Resolution installation"),
-        ("Registry tweaks", "Registry tweaks"),
         ("Registry changes", "Registry changes"),
+        ("UAC optimization", "UAC optimization"),
+        ("Core Isolation optimization", "Core Isolation optimization"),
+        ("Defender optimize", "Defender optimize"),
         ("Lock screen optimization", "Signout lockscreen optimization"),
         ("Uninstall Edge", "Edge uninstaller"),
         ("Background apps optimization", "Background apps optimization"),
@@ -980,14 +984,18 @@ def run_selected_optimizations(selected_indices, optimizations):
         opt_name, _ = optimizations[index - 1]
         
         # Map optimization names to their respective functions
-        if "GPU registry optimization" in opt_name:
-            optimization_functions.append((opt_name, lambda: debloat_windows.apply_gpuregistryoptimization(gputype)))
+        if "Driver debloat settings AMD" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.run_driver_debloat_settings_amd))
+        elif "AMD settings" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.apply_amdoptimization))
         elif "DirectX installation" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.run_directxinstallation))
         elif "C++ installation" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.run_cinstallation))
         elif "Start menu optimization" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.run_startmenuoptimization))
+        elif "Spectre meltdown optimization" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.run_spectre_meltdown))
         elif "Uninstall Copilot" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.run_copilotuninstaller))
         elif "Uninstall Widgets" in opt_name:
@@ -998,10 +1006,14 @@ def run_selected_optimizations(selected_indices, optimizations):
             optimization_functions.append((opt_name, debloat_windows.apply_powerplan))
         elif "Install Timer Resolution" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.install_timerresolution))
-        elif "Registry tweaks" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_registrytweak))
         elif "Registry changes" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.apply_registry_changes))
+        elif "UAC optimization" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.run_uac_optimization))
+        elif "Core Isolation optimization" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.run_core_isolation_optimization))
+        elif "Defender optimize" in opt_name:
+            optimization_functions.append((opt_name, debloat_windows.run_defender_optimize))
         elif "Lock screen optimization" in opt_name:
             optimization_functions.append((opt_name, debloat_windows.apply_signoutlockscreen))
         elif "Uninstall Edge" in opt_name:
@@ -1115,17 +1127,21 @@ def main():
                         
                         # Build complete optimization pipeline
                         optimization_functions = [
-                            ("GPU registry optimization", lambda: debloat_windows.apply_gpuregistryoptimization(gputype)),
+                            ("Driver debloat settings AMD", debloat_windows.run_driver_debloat_settings_amd),
+                            ("AMD settings", debloat_windows.apply_amdoptimization),
                             ("DirectX installation", debloat_windows.run_directxinstallation),
                             ("C++ installation", debloat_windows.run_cinstallation),
                             ("Start menu optimization", debloat_windows.run_startmenuoptimization),
+                            ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
                             ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
                             ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
                             ("GameBar optimization", debloat_windows.run_gamebaroptimization),
                             ("Configure power plan", debloat_windows.apply_powerplan),
                             ("Install Timer Resolution", debloat_windows.install_timerresolution),
-                            ("Registry tweaks", debloat_windows.run_registrytweak),
                             ("Registry changes", debloat_windows.apply_registry_changes),
+                            ("UAC optimization", debloat_windows.run_uac_optimization),
+                            ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
+                            ("Defender optimize", debloat_windows.run_defender_optimize),
                             ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
                             ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
@@ -1173,17 +1189,21 @@ def main():
                         log_and_print(f"🎮 Detected GPU: {gputype}")
                         
                         optimization_functions = [
-                            ("GPU registry optimization", lambda: debloat_windows.apply_gpuregistryoptimization(gputype)),
+                            ("Driver debloat settings AMD", debloat_windows.run_driver_debloat_settings_amd),
+                            ("AMD settings", debloat_windows.apply_amdoptimization),
                             ("DirectX installation", debloat_windows.run_directxinstallation),
                             ("C++ installation", debloat_windows.run_cinstallation),
                             ("Start menu optimization", debloat_windows.run_startmenuoptimization),
+                            ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
                             ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
                             ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
                             ("GameBar optimization", debloat_windows.run_gamebaroptimization),
                             ("Configure power plan", debloat_windows.apply_powerplan),
                             ("Install Timer Resolution", debloat_windows.install_timerresolution),
-                            ("Registry tweaks", debloat_windows.run_registrytweak),
                             ("Registry changes", debloat_windows.apply_registry_changes),
+                            ("UAC optimization", debloat_windows.run_uac_optimization),
+                            ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
+                            ("Defender optimize", debloat_windows.run_defender_optimize),
                             ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
                             ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
