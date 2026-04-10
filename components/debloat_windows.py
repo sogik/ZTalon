@@ -42,12 +42,17 @@ def show_error_popup(message, allow_continue=True):
 def run_powershell_with_monitoring(command, script_path=None, timeout=300):
     """Run PowerShell command with clean logging"""
     try:
+        cmd = None
         if script_path:
             cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path]
             script_name = script_path.split('\\')[-1] if '\\' in script_path else script_path
             log_and_print(f"🔄 Executing script: {script_name}")
-        else:
+        elif command:
+            cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-Command", command]
             log_and_print(f"🔄 Executing PowerShell command")
+        else:
+            log_and_print("❌ No PowerShell script path or command provided")
+            return False
         
         process = subprocess.Popen(
             cmd,
@@ -127,6 +132,15 @@ def apply_registry_changes(interactive=True, taskbar_alignment=None, apply_black
         apply_black_taskbar (bool): True to apply black taskbar settings. Required if interactive=False.
     """
     log_and_print("🔧 Applying registry changes...")
+
+    def input_fn(prompt, default):
+        return input(prompt) or default
+
+    try:
+        from init import safe_input as imported_safe_input
+        input_fn = imported_safe_input
+    except Exception:
+        pass
     
     if interactive:
         # Prompt for taskbar position preference
@@ -140,11 +154,7 @@ def apply_registry_changes(interactive=True, taskbar_alignment=None, apply_black
         print("2. Center (Windows 11 default)")
         print()
         
-        try:
-            from init import safe_input
-            position_choice = safe_input("Enter your choice (1-2): ", "1").strip()
-        except ImportError:
-            position_choice = input("Enter your choice (1-2): ").strip()
+        position_choice = input_fn("Enter your choice (1-2): ", "1").strip()
         
         # Configure taskbar alignment: 0 = Left, 1 = Center
         taskbar_alignment = 1 if position_choice == "2" else 0
@@ -161,10 +171,7 @@ def apply_registry_changes(interactive=True, taskbar_alignment=None, apply_black
         print("2. No, keep current colors")
         print()
         
-        try:
-            taskbar_choice = safe_input("Enter your choice (1-2): ", "2").strip()
-        except NameError:
-            taskbar_choice = input("Enter your choice (1-2): ").strip()
+        taskbar_choice = input_fn("Enter your choice (1-2): ", "2").strip()
         
         apply_black_taskbar = taskbar_choice == "1"
     else:
@@ -707,6 +714,7 @@ def run_advanced_cleanup():
     Write-Host "🎉 Advanced cleanup completed!" -ForegroundColor Green
     """
     
+    script_path = None
     try:
         # Write the script to temp file
         temp_dir = tempfile.gettempdir()
