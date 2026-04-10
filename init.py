@@ -8,7 +8,6 @@ import platform
 import winreg
 
 from components.installer_patch import fetch_ultimate_installer, patch_installer_script
-import tempfile
 import urllib.request
 
 from components import debloat_windows
@@ -18,7 +17,6 @@ from components.utils import (
     check_admin_privileges,
     get_secure_temp_dir,
     get_system_info,
-    handle_error,
 )
 
 enhanced_logger = setup_enhanced_logging("INFO")
@@ -58,81 +56,43 @@ def is_console_available():
         return False
 
 def safe_input(prompt="", default=""):
-    """Safe input function that handles EOF errors with timeout"""
+    """Safe input with timeout and sensible fallback."""
     try:
-        if is_console_available():
-            print(prompt, end="", flush=True)
-            # Use a timeout to prevent hanging
-            import select
-            import sys
-            
-            # For Windows, we need a different approach
-            if os.name == 'nt':
-                import msvcrt
-                import time
-                
-                start_time = time.time()
-                input_chars = []
-                
-                while True:
-                    if msvcrt.kbhit():
-                        char = msvcrt.getch()
-                        if char in [b'\r', b'\n']:  # Enter key
-                            print()  # New line
-                            return ''.join(input_chars) if input_chars else default
-                        elif char == b'\x08':  # Backspace
-                            if input_chars:
-                                input_chars.pop()
-                                print('\b \b', end='', flush=True)
-                        elif char == b'\x03':  # Ctrl+C
-                            raise KeyboardInterrupt
-                        else:
-                            try:
-                                decoded_char = char.decode('utf-8')
-                                input_chars.append(decoded_char)
-                                print(decoded_char, end='', flush=True)
-                            except:
-                                pass
-                    
-                    # Timeout after 30 seconds
-                    if time.time() - start_time > 30:
-                        print(f"\n⏱️ Input timeout. Using default: {default}")
-                        return default
-                    
-                    time.sleep(0.1)
-            else:
-                # Unix-like systems
-                return input(prompt)
-        else:
-            # If no console, create one or use default
-            try:
-                # Allocate a console for the process
-                ctypes.windll.kernel32.AllocConsole()
-                # Reopen stdin, stdout, stderr
-                sys.stdin = open('CONIN$', 'r')
-                sys.stdout = open('CONOUT$', 'w') 
-                sys.stderr = open('CONOUT$', 'w')
-                print(prompt, end="", flush=True)
-                
-                # Try input with timeout
-                import signal
-                def timeout_handler(signum, frame):
-                    raise TimeoutError("Input timeout")
-                
-                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)  # 30 second timeout
-                
+        if os.name != 'nt' or not is_console_available():
+            value = input(prompt)
+            return value if value else default
+
+        import msvcrt
+
+        print(prompt, end="", flush=True)
+        start_time = time.time()
+        chars = []
+
+        while True:
+            if msvcrt.kbhit():
+                char = msvcrt.getch()
+                if char in (b'\r', b'\n'):
+                    print()
+                    return ''.join(chars) if chars else default
+                if char == b'\x08':
+                    if chars:
+                        chars.pop()
+                        print('\b \b', end='', flush=True)
+                    continue
+                if char == b'\x03':
+                    raise KeyboardInterrupt
                 try:
-                    result = input()
-                    signal.alarm(0)  # Cancel alarm
-                    return result if result else default
-                finally:
-                    signal.signal(signal.SIGALRM, old_handler)
-                    
-            except (TimeoutError, Exception):
-                print(f"\n⏱️ Input timeout or error. Using default: {default}")
+                    decoded = char.decode('utf-8')
+                    chars.append(decoded)
+                    print(decoded, end='', flush=True)
+                except Exception:
+                    pass
+
+            if time.time() - start_time > 30:
+                print(f"\n⏱️ Input timeout. Using default: {default}")
                 return default
-                
+
+            time.sleep(0.1)
     except EOFError:
         print(f"\n⚠️ No console input available. Using default: {default}")
         return default
@@ -453,6 +413,62 @@ def show_extra_config_menu():
 
     return extras
 
+
+OPTIMIZATION_FUNCTIONS = {
+    "Driver debloat settings AMD": debloat_windows.run_driver_debloat_settings_amd,
+    "AMD settings": debloat_windows.apply_amdoptimization,
+    "DirectX installation": debloat_windows.run_directxinstallation,
+    "C++ installation": debloat_windows.run_cinstallation,
+    "Start menu optimization": debloat_windows.run_startmenuoptimization,
+    "Uninstall Copilot": debloat_windows.run_copilotuninstaller,
+    "Uninstall Widgets": debloat_windows.run_widgetsuninstaller,
+    "GameBar optimization": debloat_windows.run_gamebaroptimization,
+    "Configure power plan": debloat_windows.apply_powerplan,
+    "Install Timer Resolution": debloat_windows.install_timerresolution,
+    "Registry changes": debloat_windows.apply_registry_changes,
+    "Lock screen optimization": debloat_windows.apply_signoutlockscreen,
+    "Uninstall Edge": debloat_windows.run_edgeuninstaller,
+    "Background apps optimization": debloat_windows.run_backgroundapps,
+    "Autoruns optimization": debloat_windows.run_autoruns,
+    "Network optimization": debloat_windows.apply_networkoptimization,
+    "Disable WPBT (Platform Binary Table)": debloat_windows.disable_wpbt,
+    "Disable folder type discovery in Explorer": debloat_windows.disable_folder_discovery,
+}
+
+EXTRA_FUNCTIONS = {
+    "Spectre meltdown optimization": debloat_windows.run_spectre_meltdown,
+    "UAC optimization": debloat_windows.run_uac_optimization,
+    "Core Isolation optimization": debloat_windows.run_core_isolation_optimization,
+    "Defender optimize": debloat_windows.run_defender_optimize,
+}
+
+
+def reorder_defender_last(pipeline):
+    defender = [item for item in pipeline if "Defender optimize" in item[0]]
+    normal = [item for item in pipeline if "Defender optimize" not in item[0]]
+    return normal + defender
+
+
+def run_pipeline(pipeline, title="Summary"):
+    total_steps = len(pipeline)
+    successful = 0
+    for i, (name, func) in enumerate(pipeline, 1):
+        if run_optimization(name, func, i, total_steps):
+            successful += 1
+    print(f"\n🎯 {title}: {successful}/{total_steps} applied successfully")
+    ask_restart()
+
+
+def build_main_pipeline(include_cleanup=True):
+    pipeline = [(name, fn) for name, fn in OPTIMIZATION_FUNCTIONS.items()]
+    if include_cleanup:
+        pipeline.append(("System final cleanup", debloat_windows.finalize_installation))
+    return pipeline
+
+
+def build_extra_pipeline():
+    return reorder_defender_last([(name, fn) for name, fn in EXTRA_FUNCTIONS.items()])
+
 def get_gpu_info_advanced():
     """Get GPU information using multiple methods"""
     try:
@@ -515,23 +531,13 @@ def get_gpu_info_advanced():
 def detect_gpu_type(gpu_name):
     """Detects GPU type based on name"""
     name_upper = gpu_name.upper()
-    
-    nvidia_keywords = ['NVIDIA', 'GEFORCE', 'RTX', 'GTX', 'QUADRO', 'TESLA']
+
     amd_keywords = ['AMD', 'RADEON', 'RX ', 'VEGA', 'NAVI', 'RDNA']
-    intel_keywords = ['INTEL', 'UHD', 'IRIS', 'ARC']
-    
-    for keyword in nvidia_keywords:
-        if keyword in name_upper:
-            return 'NVIDIA'
-    
+
     for keyword in amd_keywords:
         if keyword in name_upper:
             return 'AMD'
-    
-    for keyword in intel_keywords:
-        if keyword in name_upper:
-            return 'INTEL'
-    
+
     return 'Unknown'
 
 def get_real_windows_version():
@@ -706,9 +712,7 @@ def run_app_installer_simple_fixed():
     try:
         log_and_print("🚀 Starting application installer...")
         
-        import tempfile
-
-        temp_dir = tempfile.gettempdir()
+        temp_dir = os.environ.get("TEMP", os.getenv("TMP", "C:\\Windows\\Temp"))
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
 
         log_and_print("📥 Downloading official Ultimate installer script")
@@ -941,74 +945,18 @@ def run_selected_optimizations(selected_indices, optimizations):
     gputype = get_gpu_info_advanced()
     log_and_print(f"🎮 Detected GPU: {gputype}")
     
-    # Build targeted optimization function list
     optimization_functions = []
-    
     for index in sorted(selected_indices):
         opt_name, _ = optimizations[index - 1]
-        
-        # Map optimization names to their respective functions
-        if "Driver debloat settings AMD" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_driver_debloat_settings_amd))
-        elif "AMD settings" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.apply_amdoptimization))
-        elif "DirectX installation" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_directxinstallation))
-        elif "C++ installation" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_cinstallation))
-        elif "Start menu optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_startmenuoptimization))
-        elif "Spectre meltdown optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_spectre_meltdown))
-        elif "Uninstall Copilot" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_copilotuninstaller))
-        elif "Uninstall Widgets" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_widgetsuninstaller))
-        elif "GameBar optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_gamebaroptimization))
-        elif "Configure power plan" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.apply_powerplan))
-        elif "Install Timer Resolution" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.install_timerresolution))
-        elif "Registry changes" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.apply_registry_changes))
-        elif "UAC optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_uac_optimization))
-        elif "Core Isolation optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_core_isolation_optimization))
-        elif "Defender optimize" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_defender_optimize))
-        elif "Lock screen optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.apply_signoutlockscreen))
-        elif "Uninstall Edge" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_edgeuninstaller))
-        elif "Background apps optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_backgroundapps))
-        elif "Autoruns optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.run_autoruns))
-        elif "Network optimization" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.apply_networkoptimization))
-        elif "Disable WPBT (Platform Binary Table)" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.disable_wpbt))
-        elif "Disable folder type discovery in Explorer" in opt_name:
-            optimization_functions.append((opt_name, debloat_windows.disable_folder_discovery))
-    
-    # Force Defender optimize to be the last destructive step
-    defender_steps = [
-        item for item in optimization_functions
-        if "Defender optimize" in item[0]
-    ]
-    optimization_functions = [
-        item for item in optimization_functions
-        if "Defender optimize" not in item[0]
-    ]
+        if opt_name in OPTIMIZATION_FUNCTIONS:
+            optimization_functions.append((opt_name, OPTIMIZATION_FUNCTIONS[opt_name]))
+        elif opt_name in EXTRA_FUNCTIONS:
+            optimization_functions.append((opt_name, EXTRA_FUNCTIONS[opt_name]))
 
-    # Always add system cleanup as final step
-    if optimization_functions:
+    optimization_functions = reorder_defender_last(optimization_functions)
+
+    if optimization_functions and all(name in OPTIMIZATION_FUNCTIONS for name, _ in optimization_functions):
         optimization_functions.append(("System final cleanup", debloat_windows.finalize_installation))
-
-    if defender_steps:
-        optimization_functions.extend(defender_steps)
     
     # Display confirmation before execution
     clear_screen()
@@ -1068,6 +1016,47 @@ def run_selected_optimizations(selected_indices, optimizations):
     time.sleep(2)
     ask_restart()
 
+
+def handle_optimization_flow():
+    """Handle optimization menu interactions for install/optimize modes."""
+    optimizations = show_optimization_menu()
+
+    while True:
+        opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
+
+        if opt_choice == "c":
+            return False
+
+        if opt_choice == "a":
+            gputype = get_gpu_info_advanced()
+            log_and_print(f"🎮 Detected GPU: {gputype}")
+            run_pipeline(build_main_pipeline(), "Summary")
+            return True
+
+        if opt_choice == "s":
+            selected_indices = show_individual_optimization_menu(optimizations)
+            if selected_indices:
+                run_selected_optimizations(selected_indices, optimizations)
+                return True
+            continue
+
+        if opt_choice == "e":
+            extras = show_extra_config_menu()
+            extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
+
+            if extra_choice == "a":
+                run_pipeline(build_extra_pipeline(), "Extra summary")
+                return True
+
+            if extra_choice == "s":
+                selected_indices = show_individual_optimization_menu(extras)
+                if selected_indices:
+                    run_selected_optimizations(selected_indices, extras)
+                    return True
+            continue
+
+        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
+
 def main():
     """Main application entry point"""
     try:
@@ -1088,170 +1077,12 @@ def main():
                 if show_app_install_menu():
                     if not run_app_installer_simple_fixed():
                         show_error_popup("Application installation failed", allow_continue=True)
-                
-                # Present optimization options
-                optimizations = show_optimization_menu()
-                
-                while True:
-                    opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
-                    
-                    if opt_choice == "c":
-                        break
-                    elif opt_choice == "a":
-                        # Execute all available optimizations
-                        gputype = get_gpu_info_advanced()
-                        log_and_print(f"🎮 Detected GPU: {gputype}")
-                        
-                        # Build complete optimization pipeline
-                        optimization_functions = [
-                            ("Driver debloat settings AMD", debloat_windows.run_driver_debloat_settings_amd),
-                            ("AMD settings", debloat_windows.apply_amdoptimization),
-                            ("DirectX installation", debloat_windows.run_directxinstallation),
-                            ("C++ installation", debloat_windows.run_cinstallation),
-                            ("Start menu optimization", debloat_windows.run_startmenuoptimization),
-                            ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
-                            ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
-                            ("GameBar optimization", debloat_windows.run_gamebaroptimization),
-                            ("Configure power plan", debloat_windows.apply_powerplan),
-                            ("Install Timer Resolution", debloat_windows.install_timerresolution),
-                            ("Registry changes", debloat_windows.apply_registry_changes),
-                            ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
-                            ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
-                            ("Background apps optimization", debloat_windows.run_backgroundapps),
-                            ("Autoruns optimization", debloat_windows.run_autoruns),
-                            ("Network optimization", debloat_windows.apply_networkoptimization),
-                            ("Disable WPBT (Platform Binary Table)", debloat_windows.disable_wpbt),
-                            ("Disable folder type discovery in Explorer", debloat_windows.disable_folder_discovery),
-                            ("System final cleanup", debloat_windows.finalize_installation)
-                        ]
-                        
-                        total_steps = len(optimization_functions)
-                        successful = 0
-                        
-                        # Execute optimization pipeline sequentially
-                        for i, (name, func) in enumerate(optimization_functions, 1):
-                            if run_optimization(name, func, i, total_steps):
-                                successful += 1
-                        
-                        print(f"\n🎯 Summary: {successful}/{total_steps} optimizations applied successfully")
-                        
-                        ask_restart()
-                        return
-                        
-                    elif opt_choice == "s":
-                        # Handle user-selected optimizations
-                        selected_indices = show_individual_optimization_menu(optimizations)
-                        if selected_indices:
-                            run_selected_optimizations(selected_indices, optimizations)
-                            return
-                    elif opt_choice == "e":
-                        extras = show_extra_config_menu()
-                        extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
-                        if extra_choice == "a":
-                            extra_pipeline = [
-                                ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
-                                ("UAC optimization", debloat_windows.run_uac_optimization),
-                                ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
-                                ("Defender optimize", debloat_windows.run_defender_optimize),
-                            ]
-                            defender_steps = [x for x in extra_pipeline if "Defender optimize" in x[0]]
-                            extra_pipeline = [x for x in extra_pipeline if "Defender optimize" not in x[0]] + defender_steps
-                            total_steps = len(extra_pipeline)
-                            successful = 0
-                            for i, (name, func) in enumerate(extra_pipeline, 1):
-                                if run_optimization(name, func, i, total_steps):
-                                    successful += 1
-                            print(f"\n🎯 Extra summary: {successful}/{total_steps} configurations applied successfully")
-                            ask_restart()
-                            return
-                        elif extra_choice == "s":
-                            selected_indices = show_individual_optimization_menu(extras)
-                            if selected_indices:
-                                run_selected_optimizations(selected_indices, extras)
-                                return
-                    else:
-                        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
+                if handle_optimization_flow():
+                    return
             
             elif choice == "optimize":
-                # System optimization without app installation
-                optimizations = show_optimization_menu()
-                
-                while True:
-                    opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
-                    
-                    if opt_choice == "c":
-                        break
-                    elif opt_choice == "a":
-                        # Execute same optimization pipeline as above
-                        gputype = get_gpu_info_advanced()
-                        log_and_print(f"🎮 Detected GPU: {gputype}")
-                        
-                        optimization_functions = [
-                            ("Driver debloat settings AMD", debloat_windows.run_driver_debloat_settings_amd),
-                            ("AMD settings", debloat_windows.apply_amdoptimization),
-                            ("DirectX installation", debloat_windows.run_directxinstallation),
-                            ("C++ installation", debloat_windows.run_cinstallation),
-                            ("Start menu optimization", debloat_windows.run_startmenuoptimization),
-                            ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
-                            ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
-                            ("GameBar optimization", debloat_windows.run_gamebaroptimization),
-                            ("Configure power plan", debloat_windows.apply_powerplan),
-                            ("Install Timer Resolution", debloat_windows.install_timerresolution),
-                            ("Registry changes", debloat_windows.apply_registry_changes),
-                            ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
-                            ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
-                            ("Background apps optimization", debloat_windows.run_backgroundapps),
-                            ("Autoruns optimization", debloat_windows.run_autoruns),
-                            ("Network optimization", debloat_windows.apply_networkoptimization),
-                            ("Disable WPBT (Platform Binary Table)", debloat_windows.disable_wpbt),
-                            ("Disable folder type discovery in Explorer", debloat_windows.disable_folder_discovery),
-                            ("System final cleanup", debloat_windows.finalize_installation)
-                        ]
-                        
-                        total_steps = len(optimization_functions)
-                        successful = 0
-                        
-                        for i, (name, func) in enumerate(optimization_functions, 1):
-                            if run_optimization(name, func, i, total_steps):
-                                successful += 1
-                        
-                        print(f"\n🎯 Summary: {successful}/{total_steps} optimizations applied successfully")
-                        
-                        ask_restart()
-                        return
-                        
-                    elif opt_choice == "s":
-                        selected_indices = show_individual_optimization_menu(optimizations)
-                        if selected_indices:
-                            run_selected_optimizations(selected_indices, optimizations)
-                            return
-                    elif opt_choice == "e":
-                        extras = show_extra_config_menu()
-                        extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
-                        if extra_choice == "a":
-                            extra_pipeline = [
-                                ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
-                                ("UAC optimization", debloat_windows.run_uac_optimization),
-                                ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
-                                ("Defender optimize", debloat_windows.run_defender_optimize),
-                            ]
-                            defender_steps = [x for x in extra_pipeline if "Defender optimize" in x[0]]
-                            extra_pipeline = [x for x in extra_pipeline if "Defender optimize" not in x[0]] + defender_steps
-                            total_steps = len(extra_pipeline)
-                            successful = 0
-                            for i, (name, func) in enumerate(extra_pipeline, 1):
-                                if run_optimization(name, func, i, total_steps):
-                                    successful += 1
-                            print(f"\n🎯 Extra summary: {successful}/{total_steps} configurations applied successfully")
-                            ask_restart()
-                            return
-                        elif extra_choice == "s":
-                            selected_indices = show_individual_optimization_menu(extras)
-                            if selected_indices:
-                                run_selected_optimizations(selected_indices, extras)
-                                return
-                    else:
-                        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
+                if handle_optimization_flow():
+                    return
             
             elif choice == "info":
                 # Show detailed system information
