@@ -714,6 +714,7 @@ def run_app_installer_simple_fixed():
         
         temp_dir = os.environ.get("TEMP", os.getenv("TMP", "C:\\Windows\\Temp"))
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
+        patched_content = ""
 
         log_and_print("📥 Downloading official Ultimate installer script")
 
@@ -734,38 +735,40 @@ def run_app_installer_simple_fixed():
                 else:
                     raise
 
-        if patched_content:
-            with open(script_path, "w", encoding="utf-8") as file:
-                file.write(patched_content)
-            log_and_print("✅ Script downloaded successfully")
-            
-            clear_screen()
-            print("=" * 70)
-            print("                APPLICATION INSTALLER")
-            print("=" * 70)
-            print()
-            print("🎮 Installer running in this window...")
-            print("📱 Follow the instructions that appear below.")
-            print()
-            print("=" * 70)
-            print()
-            
-            # Execute directly in current window
-            result = subprocess.run([
-                "powershell", 
-                "-ExecutionPolicy", "Bypass",
-                "-File", script_path
-            ], cwd=temp_dir)
-            
-            print("\n" + "=" * 70)
-            if result.returncode == 0:
-                print("✅ Installer completed successfully")
-            else:
-                print(f"⚠️ Installer finished with code: {result.returncode}")
-            print("=" * 70)
-            
-            log_and_print("✅ Application installer completed")
-            return True
+        if not patched_content:
+            raise RuntimeError("Patched installer content is empty")
+
+        with open(script_path, "w", encoding="utf-8") as file:
+            file.write(patched_content)
+        log_and_print("✅ Script downloaded successfully")
+
+        clear_screen()
+        print("=" * 70)
+        print("                APPLICATION INSTALLER")
+        print("=" * 70)
+        print()
+        print("🎮 Installer running in this window...")
+        print("📱 Follow the instructions that appear below.")
+        print()
+        print("=" * 70)
+        print()
+
+        # Execute directly in current window
+        result = subprocess.run([
+            "powershell",
+            "-ExecutionPolicy", "Bypass",
+            "-File", script_path
+        ], cwd=temp_dir)
+
+        print("\n" + "=" * 70)
+        if result.returncode == 0:
+            print("✅ Installer completed successfully")
+        else:
+            print(f"⚠️ Installer finished with code: {result.returncode}")
+        print("=" * 70)
+
+        log_and_print("✅ Application installer completed")
+        return True
             
     except Exception as e:
         error_msg = f"Error in application installer: {e}"
