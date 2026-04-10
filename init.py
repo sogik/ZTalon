@@ -351,6 +351,10 @@ def show_optimization_menu():
         ("DirectX installation", "DirectX installation"),
         ("C++ installation", "C++ installation"),
         ("Start menu optimization", "Start menu optimization"),
+        ("Spectre meltdown optimization (DANGEROUS)", "Spectre meltdown optimization"),
+        ("UAC optimization (DANGEROUS)", "UAC optimization"),
+        ("Core Isolation optimization (DANGEROUS)", "Core Isolation optimization"),
+        ("Defender optimize (DANGEROUS)", "Defender optimize"),
         ("Uninstall Copilot", "Copilot uninstaller"),
         ("Uninstall Widgets", "Widgets uninstaller"),
         ("GameBar optimization", "Gamebar optimization"),
@@ -378,42 +382,11 @@ def show_optimization_menu():
     print()
     print("a. All optimizations (INTERACTIVE)")
     print("s. Select specific optimizations")
-    print("e. Extra configurations")
     print("c. Cancel")
     print()
     print("=" * 70)
     
     return optimizations
-
-
-def show_extra_config_menu():
-    """Shows extra configuration options"""
-    extras = [
-        ("Spectre meltdown optimization", "Spectre meltdown optimization"),
-        ("UAC optimization", "UAC optimization"),
-        ("Core Isolation optimization", "Core Isolation optimization"),
-        ("Defender optimize", "Defender optimize"),
-    ]
-
-    clear_screen()
-    print("=" * 70)
-    print("                  EXTRA CONFIGURATIONS")
-    print("=" * 70)
-    print()
-
-    for i, (english, _) in enumerate(extras, 1):
-        print(f"{i:2d}. {english}")
-
-    print()
-    print("a. All extra configurations")
-    print("s. Select specific configurations")
-    print("c. Back")
-    print()
-    print("=" * 70)
-
-    return extras
-
-
 OPTIMIZATION_FUNCTIONS = {
     "Driver debloat settings AMD": debloat_windows.run_driver_debloat_settings_amd,
     "AMD settings": debloat_windows.apply_amdoptimization,
@@ -436,10 +409,10 @@ OPTIMIZATION_FUNCTIONS = {
 }
 
 EXTRA_FUNCTIONS = {
-    "Spectre meltdown optimization": debloat_windows.run_spectre_meltdown,
-    "UAC optimization": debloat_windows.run_uac_optimization,
-    "Core Isolation optimization": debloat_windows.run_core_isolation_optimization,
-    "Defender optimize": debloat_windows.run_defender_optimize,
+    "Spectre meltdown optimization (DANGEROUS)": debloat_windows.run_spectre_meltdown,
+    "UAC optimization (DANGEROUS)": debloat_windows.run_uac_optimization,
+    "Core Isolation optimization (DANGEROUS)": debloat_windows.run_core_isolation_optimization,
+    "Defender optimize (DANGEROUS)": debloat_windows.run_defender_optimize,
 }
 
 
@@ -461,13 +434,12 @@ def run_pipeline(pipeline, title="Summary"):
 
 def build_main_pipeline(include_cleanup=True):
     pipeline = [(name, fn) for name, fn in OPTIMIZATION_FUNCTIONS.items()]
+    pipeline.extend((name, fn) for name, fn in EXTRA_FUNCTIONS.items())
+    pipeline = reorder_defender_last(pipeline)
     if include_cleanup:
         pipeline.append(("System final cleanup", debloat_windows.finalize_installation))
     return pipeline
 
-
-def build_extra_pipeline():
-    return reorder_defender_last([(name, fn) for name, fn in EXTRA_FUNCTIONS.items()])
 
 def get_gpu_info_advanced():
     """Get GPU information using multiple methods"""
@@ -1025,7 +997,7 @@ def handle_optimization_flow():
     optimizations = show_optimization_menu()
 
     while True:
-        opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
+        opt_choice = safe_input("Choose option (a/s/c): ", "").lower()
 
         if opt_choice == "c":
             return False
@@ -1043,22 +1015,7 @@ def handle_optimization_flow():
                 return True
             continue
 
-        if opt_choice == "e":
-            extras = show_extra_config_menu()
-            extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
-
-            if extra_choice == "a":
-                run_pipeline(build_extra_pipeline(), "Extra summary")
-                return True
-
-            if extra_choice == "s":
-                selected_indices = show_individual_optimization_menu(extras)
-                if selected_indices:
-                    run_selected_optimizations(selected_indices, extras)
-                    return True
-            continue
-
-        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
+        print("❌ Invalid option. Please choose 'a', 's' or 'c'.")
 
 def main():
     """Main application entry point"""
