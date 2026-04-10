@@ -1,25 +1,18 @@
 import sys
 import os
-import ctypes
 import subprocess
 import tempfile
 import logging
-import requests
 import winreg
 import time
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
-import winreg
 
 # Importar las nuevas utilidades
 from .utils import (
     download_with_ssl,
-    create_ssl_context,
-    verify_file_integrity,
     get_secure_temp_dir,
     handle_error,
-    ZTalonError
 )
 
 LOG_FILE = "ztalon.txt"
@@ -45,31 +38,6 @@ def show_error_popup(message, allow_continue=True):
     else:
         input("Press Enter to exit...")
         sys.exit(1)
-
-@handle_error
-def download_file_with_retries(url, dest_path, max_retries=3, timeout=30):
-    """
-    Download file with retry mechanism using enhanced SSL support
-    """
-    filename = url.split('/')[-1].replace('%20', ' ')
-    log_and_print(f"📥 Starting download: {filename}")
-    
-    # Usar la nueva función SSL mejorada
-    success = download_with_ssl(url, dest_path, timeout, max_retries)
-    
-    if success:
-        # Verificar integridad del archivo descargado
-        verification = verify_file_integrity(dest_path)
-        if verification['valid']:
-            log_and_print("✅ Download completed and verified successfully")
-            log_and_print(f"   File size: {verification['file_size']} bytes")
-            log_and_print(f"   SHA256: {verification['sha256'][:16]}...")
-        else:
-            log_and_print(f"⚠️ File verification failed: {verification.get('error', 'Unknown error')}")
-        return True
-    else:
-        log_and_print("❌ Download failed after all attempts")
-        return False
 
 def run_powershell_with_monitoring(command, script_path=None, timeout=300):
     """Run PowerShell command with clean logging"""
@@ -913,57 +881,3 @@ def finalize_installation():
     
     return True
 
-def run_threaded_optimizations(optimization_list, max_workers=2):
-    """Run multiple optimizations in parallel with thread management"""
-    log_and_print(f"🔧 Starting threaded optimizations with {max_workers} workers...")
-    
-    results = {}
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all tasks
-        future_to_name = {
-            executor.submit(func): name 
-            for name, func in optimization_list
-        }
-        
-        # Process completed tasks
-        for future in as_completed(future_to_name):
-            name = future_to_name[future]
-            try:
-                result = future.result(timeout=600)  # 10 minute timeout per task
-                results[name] = result
-                log_and_print(f"✅ Completed: {name}")
-            except Exception as e:
-                log_and_print(f"❌ Failed: {name} - {e}")
-                results[name] = False
-    
-    successful = sum(1 for result in results.values() if result)
-    total = len(results)
-    log_and_print(f"📊 Threaded optimizations: {successful}/{total} completed successfully")
-    
-    return results
-
-# Test function for debugging
-def test_connectivity():
-    """Test connectivity to required URLs"""
-    test_urls = [
-        "https://raw.githubusercontent.com/FR33THYFR33THY/Ultimate/main/6%20Windows/19%20Gamebar.ps1",
-        "https://raw.githubusercontent.com/ChrisTitusTech/winutil/main/winutil.ps1",
-        "https://debloat.raphi.re/"
-    ]
-    
-    log_and_print("🔍 Testing connectivity to required URLs...")
-    for url in test_urls:
-        try:
-            response = requests.head(url, timeout=10)
-            if response.status_code == 200:
-                log_and_print(f"✅ {url} - OK")
-            else:
-                log_and_print(f"⚠️ {url} - HTTP {response.status_code}")
-        except Exception as e:
-            log_and_print(f"❌ {url} - {e}")
-
-if __name__ == "__main__":
-    # Test mode when run directly
-    log_and_print("🧪 Running in test mode...")
-    test_connectivity()
-    apply_registry_changes()
