@@ -30,10 +30,6 @@ jobs:
         shell: cmd
         run: build_cli.bat
 
-      - name: Build GUI with build_gui.bat
-        shell: cmd
-        run: build_gui.bat
-
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
@@ -42,12 +38,3 @@ jobs:
             dist/cli/ZTalon-CLI.exe
             dist/cli/ZTalon-CLI.exe.sha256
             dist/cli/ZTalon-CLI.exe.md5
-
-      - name: Upload GUI artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ZTalon-GUI
-          path: |
-            dist/gui/ZTalon.exe
-            dist/gui/ZTalon.exe.sha256
-            dist/gui/ZTalon.exe.md5

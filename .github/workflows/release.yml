@@ -28,10 +28,6 @@ jobs:
         shell: cmd
         run: build_cli.bat
 
-      - name: Build GUI with build_gui.bat
-        shell: cmd
-        run: build_gui.bat
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -40,6 +36,3 @@ jobs:
             dist/cli/ZTalon-CLI.exe
             dist/cli/ZTalon-CLI.exe.sha256
             dist/cli/ZTalon-CLI.exe.md5
-            dist/gui/ZTalon.exe
-            dist/gui/ZTalon.exe.sha256
-            dist/gui/ZTalon.exe.md5

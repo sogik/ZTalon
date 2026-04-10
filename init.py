@@ -10,18 +10,15 @@ import winreg
 from components.installer_patch import fetch_ultimate_installer, patch_installer_script
 import tempfile
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from components import debloat_windows
-from components import app_install
 # Importar las nuevas utilidades
 from components.utils import (
     setup_enhanced_logging,
     check_admin_privileges,
     get_secure_temp_dir,
     get_system_info,
-    ZTalonError,
-    handle_error
+    handle_error,
 )
 
 enhanced_logger = setup_enhanced_logging("INFO")
@@ -206,71 +203,6 @@ def ensure_admin():
         log_and_print("Running with Administrator privileges.")
 
 
-def show_system_info(windows_info, gpu_info):
-    """Show comprehensive system information using enhanced utils"""
-    system_info = get_system_info()
-    
-    clear_screen()
-    print("=" * 70)
-    print("                SYSTEM INFORMATION")
-    print("=" * 70)
-    print()
-    
-    if 'os' in system_info:
-        print("🖥️  Operating System:")
-        print(f"   Platform: {system_info['os'].get('platform', 'Unknown')}")
-        print(f"   Architecture: {system_info['os'].get('architecture', ['Unknown'])[0]}")
-        print()
-    
-    if 'python' in system_info:
-        print("🐍 Python:")
-        print(f"   Version: {system_info['python'].get('version', 'Unknown')}")
-        print(f"   Implementation: {system_info['python'].get('implementation', 'Unknown')}")
-        print()
-    
-    if 'system' in system_info:
-        print("⚙️  System Resources:")
-        print(f"   CPU Cores: {system_info['system'].get('cpu_count', 'Unknown')}")
-        print(f"   Memory: {system_info['system'].get('memory_gb', 'Unknown')} GB")
-        print(f"   Free Disk Space: {system_info['system'].get('disk_free_gb', 'Unknown')} GB")
-        print()
-    
-    if 'ztalon' in system_info:
-        print("🛠️  ZTalon Status:")
-        admin_status = "✅ Yes" if system_info['ztalon'].get('admin_privileges') else "❌ No"
-        print(f"   Admin Privileges: {admin_status}")
-        print(f"   Temp Directory: {system_info['ztalon'].get('temp_dir', 'Unknown')}")
-        print(f"   SSL Support: ✅ Enhanced" if system_info['ztalon'].get('ssl_support') else "⚠️ Basic")
-        print()
-    
-    print("🎮 GPU Information:")
-    print(f"   Detected GPU: {gpu_info}")
-    print()
-    
-    print("=" * 70)
-
-
-@handle_error
-def check_temp_writable():
-    """Check if temp directory is writable using enhanced utils"""
-    secure_temp = get_secure_temp_dir()
-    
-    try:
-        test_path = os.path.join(secure_temp, "_write_test")
-        with open(test_path, "w") as f:
-            f.write("test")
-        os.remove(test_path)
-        log_and_print(f"✅ Secure temp directory ready: {secure_temp}")
-        return True
-    except Exception as e:
-        log_and_print(f"❌ Temp dir check failed: {e}")
-        show_error_popup(
-            f"Could not write files to {secure_temp}.\n"
-            "Please free up disk space or check permissions.",
-            allow_continue=True
-        )
-        return False
-
 def check_connectivity():
     """Check internet connectivity to required domains"""
     test_urls = [
@@ -298,8 +230,7 @@ def check_connectivity():
 
 def check_temp_writable():
     """Check if temp directory is writable"""
-    temp_root = os.environ.get("TEMP", tempfile.gettempdir())
-    ztalon_dir = os.path.join(temp_root, "ztalon")
+    ztalon_dir = get_secure_temp_dir()
     
     try:
         os.makedirs(ztalon_dir, exist_ok=True)
@@ -682,11 +613,24 @@ def get_windows_info():
 
 def show_system_info(windows_info, gputype):
     """Shows detailed system information"""
+    system_info = get_system_info()
     clear_screen()
-    print("=" * 60)
+    print("=" * 70)
     print("                SYSTEM INFORMATION")
-    print("=" * 60)
+    print("=" * 70)
     print()
+
+    if 'os' in system_info:
+        print("🖥️  Runtime OS:")
+        print(f"   Platform: {system_info['os'].get('platform', 'Unknown')}")
+        print(f"   Architecture: {system_info['os'].get('architecture', ['Unknown'])[0]}")
+        print()
+
+    if 'system' in system_info:
+        print("⚙️  Runtime Resources:")
+        print(f"   CPU Cores: {system_info['system'].get('cpu_count', 'Unknown')}")
+        print(f"   Memory: {system_info['system'].get('memory_gb', 'Unknown')} GB")
+        print()
     
     if windows_info:
         print(f"📟 Operating System: {windows_info['product_name']}")
@@ -709,7 +653,7 @@ def show_system_info(windows_info, gputype):
         print("❌ Could not get system information")
     
     print()
-    print("=" * 60)
+    print("=" * 70)
     pause_and_continue()
 
 def run_optimization(name, func, step_num, total_steps):

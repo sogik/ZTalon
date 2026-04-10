@@ -3,11 +3,7 @@ import ctypes
 import os
 import tempfile
 import subprocess
-import requests
-import shutil
-import time
 import logging
-import json
 
 from components.installer_patch import fetch_ultimate_installer, patch_installer_script
 
@@ -61,10 +57,12 @@ def run_appinstaller():
         if process.returncode == 0:
             log("install completed successfully")
             log(f"Process stdout: {process.stdout}")
+            return True
         else:
             log(f"install failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
+            return False
             
     except Exception as e:
         log(f"Unexpected error during registry tweak: {str(e)}")
