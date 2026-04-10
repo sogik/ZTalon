@@ -9,6 +9,8 @@ import time
 import logging
 import json
 
+from components.installer_patch import fetch_ultimate_installer, patch_installer_script
+
 LOG_FILE = "ztalon.txt"
 logging.basicConfig(
     filename=LOG_FILE,
@@ -35,18 +37,17 @@ if not is_admin():
 def run_appinstaller():
     log("Starting app installer...")
     try:
-        script_url = "https://raw.githubusercontent.com/sogik/ZTalon/refs/heads/main/src/scripts/appinstallers.ps1"
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
-        log(f"Attempting to download installer script from: {script_url}")
+        log("Downloading official Ultimate installer script")
         log(f"Target script path: {script_path}")
+
+        installer_content = fetch_ultimate_installer(timeout=30)
+        patched_content = patch_installer_script(installer_content)
         
-        response = requests.get(script_url)
-        log(f"Download response status code: {response.status_code}")
-        
-        with open(script_path, "wb") as file:
-            file.write(response.content)
-        log("tweak script successfully saved to disk")
+        with open(script_path, "w", encoding="utf-8") as file:
+            file.write(patched_content)
+        log("Installer script patched and saved to disk")
 
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")

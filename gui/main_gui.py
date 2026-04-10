@@ -23,6 +23,7 @@ if ROOT_DIR not in sys.path:
 
 # Import components
 from components import debloat_windows
+from components.installer_patch import fetch_ultimate_installer, patch_installer_script
 from components.utils import check_admin_privileges, get_system_info
 
 
@@ -268,6 +269,7 @@ class ZTalonGUI(QMainWindow):
             "Home",
             "App Installer", 
             "Optimizations",
+            "Extra Configurations",
             "Cleanup",
             "Final Steps",
             "Other Tools",
@@ -289,10 +291,11 @@ class ZTalonGUI(QMainWindow):
         self.pages.addWidget(self.build_home_page())             # index 0
         self.pages.addWidget(self.build_app_installer_page())    # index 1
         self.pages.addWidget(self.build_optimizations_page())    # index 2
-        self.pages.addWidget(self.build_cleanup_page())          # index 3
-        self.pages.addWidget(self.build_final_steps_page())      # index 4
-        self.pages.addWidget(self.build_others_page())           # index 5
-        self.pages.addWidget(self.build_info_page())             # index 6
+        self.pages.addWidget(self.build_extra_config_page())     # index 3
+        self.pages.addWidget(self.build_cleanup_page())          # index 4
+        self.pages.addWidget(self.build_final_steps_page())      # index 5
+        self.pages.addWidget(self.build_others_page())           # index 6
+        self.pages.addWidget(self.build_info_page())             # index 7
 
         self.menu.currentRowChanged.connect(self.on_menu_changed)
         self.menu.setCurrentRow(0)
@@ -377,6 +380,7 @@ class ZTalonGUI(QMainWindow):
             "• Apply AMD-focused driver debloat and tuning\n"
             "• Remove bloatware and unnecessary Windows components\n"
             "• Improve system performance and responsiveness\n"
+            "• Configure advanced security settings in dedicated menu\n"
             "• Clean temporary files and cache\n"
             "• Configure optimal power and network settings"
         )
@@ -652,7 +656,6 @@ class ZTalonGUI(QMainWindow):
             ("AMD Settings", debloat_windows.apply_amdoptimization),
             ("Timer Resolution", debloat_windows.install_timerresolution),
             ("Start Menu Optimization", debloat_windows.run_startmenuoptimization),
-            ("Spectre/Meltdown Optimization", debloat_windows.run_spectre_meltdown),
             ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
             ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
             ("GameBar Optimization", debloat_windows.run_gamebaroptimization),
@@ -662,14 +665,28 @@ class ZTalonGUI(QMainWindow):
             ("DirectX Installation", debloat_windows.run_directxinstallation),
             ("C++ Redistributables", debloat_windows.run_cinstallation),
             ("Registry Changes (Apply Config Above)", self.run_registry_changes_gui),
-            ("UAC Optimization", debloat_windows.run_uac_optimization),
-            ("Core Isolation Optimization", debloat_windows.run_core_isolation_optimization),
-            ("Defender Optimize", debloat_windows.run_defender_optimize),
             ("Lock Screen Optimization", debloat_windows.apply_signoutlockscreen),
             ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
             ("Background Apps Optimization", debloat_windows.run_backgroundapps),
             ("Autoruns Optimization", debloat_windows.run_autoruns),
         ]
+
+    def get_all_extra_configurations(self) -> List[Tuple[str, Callable[[], bool]]]:
+        return [
+            ("Spectre/Meltdown Optimization", debloat_windows.run_spectre_meltdown),
+            ("UAC Optimization", debloat_windows.run_uac_optimization),
+            ("Core Isolation Optimization", debloat_windows.run_core_isolation_optimization),
+            ("Defender Optimize", debloat_windows.run_defender_optimize),
+        ]
+
+    def build_extra_config_page(self) -> QWidget:
+        page = QWidget()
+        v = QVBoxLayout(page)
+        v.setContentsMargins(15, 15, 15, 15)
+        data = self.get_all_extra_configurations()
+        section = self.build_checklist_section("extra_config", "Extra Configurations", data)
+        v.addWidget(section)
+        return page
 
     def get_all_cleanup(self) -> List[Tuple[str, Callable[[], bool]]]:
         return [
@@ -727,7 +744,7 @@ class ZTalonGUI(QMainWindow):
         self.page_animation.start()
         
         # Mostrar System Info automáticamente al entrar por primera vez
-        if index == 6 and not self._info_shown:
+        if index == 7 and not self._info_shown:
             self._info_shown = True
             QTimer.singleShot(250, self.show_system_info)  # Delay for smooth animation
 
@@ -840,34 +857,22 @@ class ZTalonGUI(QMainWindow):
     def open_app_installer_ps(self):
         """Open the application installer PowerShell script"""
         ps_script = os.path.join(ROOT_DIR, "src", "scripts", "appinstallers.ps1")
-        
-        if not os.path.exists(ps_script):
-            # Try to download it
-            self.append_log("Script not found locally, attempting to download...")
-            try:
-                import requests
-                script_url = "https://raw.githubusercontent.com/sogik/ZTalon/refs/heads/main/src/scripts/appinstallers.ps1"
-                response = requests.get(script_url, timeout=30)
-                
-                if response.status_code == 200:
-                    os.makedirs(os.path.dirname(ps_script), exist_ok=True)
-                    with open(ps_script, "wb") as f:
-                        f.write(response.content)
-                    self.append_log("Script downloaded successfully")
-                else:
-                    QMessageBox.warning(
-                        self, 
-                        "Download Failed",
-                        f"Could not download installer script.\n\nHTTP Status: {response.status_code}"
-                    )
-                    return
-            except Exception as e:
-                QMessageBox.warning(
-                    self, 
-                    "Download Error", 
-                    f"Error downloading script:\n\n{str(e)}"
-                )
-                return
+
+        self.append_log("Downloading official Ultimate installer script...")
+        try:
+            installer_content = fetch_ultimate_installer(timeout=30)
+            patched_content = patch_installer_script(installer_content)
+            os.makedirs(os.path.dirname(ps_script), exist_ok=True)
+            with open(ps_script, "w", encoding="utf-8") as f:
+                f.write(patched_content)
+            self.append_log("Installer script patched successfully")
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Download Error",
+                f"Error preparing installer script:\n\n{str(e)}"
+            )
+            return
         
         try:
             self.append_log(f"Launching Application Installer...")

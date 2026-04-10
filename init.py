@@ -6,6 +6,8 @@ import logging
 import time
 import platform
 import winreg
+
+from components.installer_patch import fetch_ultimate_installer, patch_installer_script
 import tempfile
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -458,16 +460,12 @@ def show_optimization_menu():
         ("DirectX installation", "DirectX installation"),
         ("C++ installation", "C++ installation"),
         ("Start menu optimization", "Start menu optimization"),
-        ("Spectre meltdown optimization", "Spectre meltdown optimization"),
         ("Uninstall Copilot", "Copilot uninstaller"),
         ("Uninstall Widgets", "Widgets uninstaller"),
         ("GameBar optimization", "Gamebar optimization"),
         ("Configure power plan", "Power plan"),
         ("Install Timer Resolution", "Timer Resolution installation"),
         ("Registry changes", "Registry changes"),
-        ("UAC optimization", "UAC optimization"),
-        ("Core Isolation optimization", "Core Isolation optimization"),
-        ("Defender optimize", "Defender optimize"),
         ("Lock screen optimization", "Signout lockscreen optimization"),
         ("Uninstall Edge", "Edge uninstaller"),
         ("Background apps optimization", "Background apps optimization"),
@@ -489,11 +487,40 @@ def show_optimization_menu():
     print()
     print("a. All optimizations (INTERACTIVE)")
     print("s. Select specific optimizations")
+    print("e. Extra configurations")
     print("c. Cancel")
     print()
     print("=" * 70)
     
     return optimizations
+
+
+def show_extra_config_menu():
+    """Shows extra configuration options"""
+    extras = [
+        ("Spectre meltdown optimization", "Spectre meltdown optimization"),
+        ("UAC optimization", "UAC optimization"),
+        ("Core Isolation optimization", "Core Isolation optimization"),
+        ("Defender optimize", "Defender optimize"),
+    ]
+
+    clear_screen()
+    print("=" * 70)
+    print("                  EXTRA CONFIGURATIONS")
+    print("=" * 70)
+    print()
+
+    for i, (english, _) in enumerate(extras, 1):
+        print(f"{i:2d}. {english}")
+
+    print()
+    print("a. All extra configurations")
+    print("s. Select specific configurations")
+    print("c. Back")
+    print()
+    print("=" * 70)
+
+    return extras
 
 def get_gpu_info_advanced():
     """Get GPU information using multiple methods"""
@@ -736,33 +763,32 @@ def run_app_installer_simple_fixed():
         log_and_print("🚀 Starting application installer...")
         
         import tempfile
-        import requests
-        
-        script_url = "https://raw.githubusercontent.com/sogik/ZTalon/refs/heads/main/src/scripts/appinstallers.ps1"
+
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
-        
-        log_and_print(f"📥 Downloading script from: {script_url}")
-        
+
+        log_and_print("📥 Downloading official Ultimate installer script")
+
         # Download the script with timeout and retries
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = requests.get(script_url, timeout=30)
-                if response.status_code == 200:
+                installer_content = fetch_ultimate_installer(timeout=30)
+                patched_content = patch_installer_script(installer_content)
+                if patched_content:
                     break
                 else:
-                    raise requests.RequestException(f"HTTP {response.status_code}")
+                    raise RuntimeError("Patched installer content is empty")
             except Exception as e:
                 if attempt < max_retries - 1:
                     log_and_print(f"⚠️ Download attempt {attempt + 1} failed: {e}. Retrying...")
                     time.sleep(2)
                 else:
                     raise
-        
-        if response.status_code == 200:
-            with open(script_path, "wb") as file:
-                file.write(response.content)
+
+        if patched_content:
+            with open(script_path, "w", encoding="utf-8") as file:
+                file.write(patched_content)
             log_and_print("✅ Script downloaded successfully")
             
             clear_screen()
@@ -792,12 +818,6 @@ def run_app_installer_simple_fixed():
             
             log_and_print("✅ Application installer completed")
             return True
-            
-        else:
-            error_msg = f"Error downloading script: HTTP {response.status_code}"
-            log_and_print(f"❌ {error_msg}")
-            show_error_popup(error_msg, allow_continue=True)
-            return False
             
     except Exception as e:
         error_msg = f"Error in application installer: {e}"
@@ -1116,7 +1136,7 @@ def main():
                 optimizations = show_optimization_menu()
                 
                 while True:
-                    opt_choice = safe_input("Choose option (a/s/c): ", "").lower()
+                    opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
                     
                     if opt_choice == "c":
                         break
@@ -1132,16 +1152,12 @@ def main():
                             ("DirectX installation", debloat_windows.run_directxinstallation),
                             ("C++ installation", debloat_windows.run_cinstallation),
                             ("Start menu optimization", debloat_windows.run_startmenuoptimization),
-                            ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
                             ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
                             ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
                             ("GameBar optimization", debloat_windows.run_gamebaroptimization),
                             ("Configure power plan", debloat_windows.apply_powerplan),
                             ("Install Timer Resolution", debloat_windows.install_timerresolution),
                             ("Registry changes", debloat_windows.apply_registry_changes),
-                            ("UAC optimization", debloat_windows.run_uac_optimization),
-                            ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
-                            ("Defender optimize", debloat_windows.run_defender_optimize),
                             ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
                             ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
@@ -1171,15 +1187,38 @@ def main():
                         if selected_indices:
                             run_selected_optimizations(selected_indices, optimizations)
                             return
+                    elif opt_choice == "e":
+                        extras = show_extra_config_menu()
+                        extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
+                        if extra_choice == "a":
+                            extra_pipeline = [
+                                ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
+                                ("UAC optimization", debloat_windows.run_uac_optimization),
+                                ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
+                                ("Defender optimize", debloat_windows.run_defender_optimize),
+                            ]
+                            total_steps = len(extra_pipeline)
+                            successful = 0
+                            for i, (name, func) in enumerate(extra_pipeline, 1):
+                                if run_optimization(name, func, i, total_steps):
+                                    successful += 1
+                            print(f"\n🎯 Extra summary: {successful}/{total_steps} configurations applied successfully")
+                            ask_restart()
+                            return
+                        elif extra_choice == "s":
+                            selected_indices = show_individual_optimization_menu(extras)
+                            if selected_indices:
+                                run_selected_optimizations(selected_indices, extras)
+                                return
                     else:
-                        print("❌ Invalid option. Please choose 'a', 's' or 'c'.")
+                        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
             
             elif choice == "optimize":
                 # System optimization without app installation
                 optimizations = show_optimization_menu()
                 
                 while True:
-                    opt_choice = safe_input("Choose option (a/s/c): ", "").lower()
+                    opt_choice = safe_input("Choose option (a/s/e/c): ", "").lower()
                     
                     if opt_choice == "c":
                         break
@@ -1194,16 +1233,12 @@ def main():
                             ("DirectX installation", debloat_windows.run_directxinstallation),
                             ("C++ installation", debloat_windows.run_cinstallation),
                             ("Start menu optimization", debloat_windows.run_startmenuoptimization),
-                            ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
                             ("Uninstall Copilot", debloat_windows.run_copilotuninstaller),
                             ("Uninstall Widgets", debloat_windows.run_widgetsuninstaller),
                             ("GameBar optimization", debloat_windows.run_gamebaroptimization),
                             ("Configure power plan", debloat_windows.apply_powerplan),
                             ("Install Timer Resolution", debloat_windows.install_timerresolution),
                             ("Registry changes", debloat_windows.apply_registry_changes),
-                            ("UAC optimization", debloat_windows.run_uac_optimization),
-                            ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
-                            ("Defender optimize", debloat_windows.run_defender_optimize),
                             ("Lock screen optimization", debloat_windows.apply_signoutlockscreen),
                             ("Uninstall Edge", debloat_windows.run_edgeuninstaller),
                             ("Background apps optimization", debloat_windows.run_backgroundapps),
@@ -1231,8 +1266,31 @@ def main():
                         if selected_indices:
                             run_selected_optimizations(selected_indices, optimizations)
                             return
+                    elif opt_choice == "e":
+                        extras = show_extra_config_menu()
+                        extra_choice = safe_input("Choose extra option (a/s/c): ", "").lower()
+                        if extra_choice == "a":
+                            extra_pipeline = [
+                                ("Spectre meltdown optimization", debloat_windows.run_spectre_meltdown),
+                                ("UAC optimization", debloat_windows.run_uac_optimization),
+                                ("Core Isolation optimization", debloat_windows.run_core_isolation_optimization),
+                                ("Defender optimize", debloat_windows.run_defender_optimize),
+                            ]
+                            total_steps = len(extra_pipeline)
+                            successful = 0
+                            for i, (name, func) in enumerate(extra_pipeline, 1):
+                                if run_optimization(name, func, i, total_steps):
+                                    successful += 1
+                            print(f"\n🎯 Extra summary: {successful}/{total_steps} configurations applied successfully")
+                            ask_restart()
+                            return
+                        elif extra_choice == "s":
+                            selected_indices = show_individual_optimization_menu(extras)
+                            if selected_indices:
+                                run_selected_optimizations(selected_indices, extras)
+                                return
                     else:
-                        print("❌ Invalid option. Please choose 'a', 's' or 'c'.")
+                        print("❌ Invalid option. Please choose 'a', 's', 'e' or 'c'.")
             
             elif choice == "info":
                 # Show detailed system information
