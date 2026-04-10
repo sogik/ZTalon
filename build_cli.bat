@@ -17,6 +17,7 @@ if exist build\cli rmdir /s /q build\cli
 
 echo Starting Nuitka compilation for CLI...
 nuitka --onefile --standalone --remove-output ^
+    --msvc=latest ^
     --windows-icon-from-ico=ICON.ico ^
     --show-progress --show-memory ^
     --windows-console-mode=force ^
