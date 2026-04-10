@@ -49,7 +49,7 @@ def run_powershell_with_monitoring(command, script_path=None, timeout=300):
             log_and_print(f"🔄 Executing script: {script_name}")
         elif command:
             cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-Command", command]
-            log_and_print(f"🔄 Executing PowerShell command")
+            log_and_print("🔄 Executing PowerShell command")
         else:
             log_and_print("❌ No PowerShell script path or command provided")
             return False
@@ -299,7 +299,7 @@ def download_and_execute_script(script_url, script_name, replace_commands=None, 
             return False
 
     try:
-        completed = subprocess.run(
+        subprocess.run(
             ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", script_path],
             check=True,
             timeout=timeout

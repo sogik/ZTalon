@@ -699,12 +699,12 @@ def run_optimization(name, func, step_num, total_steps):
         
         # Ask user to continue only on error
         print(f"\n⚠️ An error occurred during {name}")
-        choice = safe_input(f"Continue with remaining optimizations? (Y/n): ", "y").lower()
+        choice = safe_input("Continue with remaining optimizations? (Y/n): ", "y").lower()
         if choice == 'n':
             show_error_popup(f"Optimization stopped due to error in {name}", allow_continue=False)
             return False
         
-        print(f"🔄 Continuing with remaining optimizations...")
+        print("🔄 Continuing with remaining optimizations...")
         return False
 
 def run_app_installer_simple_fixed():
@@ -1004,9 +1004,9 @@ def run_selected_optimizations(selected_indices, optimizations):
     
     # Display comprehensive results
     print(f"\n{'='*70}")
-    print(f"              OPTIMIZATION COMPLETE")
+    print("              OPTIMIZATION COMPLETE")
     print(f"{'='*70}")
-    print(f"🎯 Final Summary:")
+    print("🎯 Final Summary:")
     print(f"   • Total optimizations: {total_steps}")
     print(f"   • Successful: {successful}")
     print(f"   • Failed: {failed}")
