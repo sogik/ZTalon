@@ -714,7 +714,7 @@ def run_advanced_cleanup():
     Write-Host "🎉 Advanced cleanup completed!" -ForegroundColor Green
     """
     
-    script_path = None
+    script_path: str | None = None
     try:
         # Write the script to temp file
         temp_dir = tempfile.gettempdir()
@@ -737,7 +737,7 @@ def run_advanced_cleanup():
     finally:
         # Clean up the script file
         try:
-            if os.path.exists(script_path):
+            if script_path is not None and os.path.exists(script_path):
                 os.remove(script_path)
         except:
             pass
