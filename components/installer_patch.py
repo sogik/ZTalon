@@ -34,6 +34,10 @@ def patch_installer_script(script_text: str) -> str:
         "$choice -match '^(2[0-6]|1[0-9]|[1-9])$'",
     )
 
+    # Fail fast if upstream script layout changed and our patch didn't apply.
+    if 'Write-Host "25. Microsoft Office 2024 LTSC Edition"' not in patched:
+        raise ValueError("Failed to patch Ultimate installer menu; upstream script changed.")
+
     misc_menu_function = """
 function show-miscellaneous-menu {
     Clear-Host
