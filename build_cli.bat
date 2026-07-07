@@ -63,4 +63,4 @@ echo.
 
 cd ..\..
 echo ✅ CLI Build completed successfully!
-pause
+if not defined GITHUB_ACTIONS pause
