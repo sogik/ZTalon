@@ -24,23 +24,24 @@ cmd /c "powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 99999999-
 # set ultimate power plan active
 cmd /c "powercfg /SETACTIVE 99999999-9999-9999-9999-999999999999 >nul 2>&1"
 
+# get active powerplan guid
+$activeOutput = powercfg /getactivescheme
+$activeGuid = if ($activeOutput -match '([0-9a-fA-F-]{36})') { $Matches[1] } else { $null }
+
 # get all powerplans
 $output = powercfg /L
 $powerPlans = @()
 foreach ($line in $output) {
-
-# extract guid manually to avoid language issues
-if ($line -match ':') {
-$parse = $line -split ':'
-$index = $parse[1].Trim().indexof('(')
-$guid = $parse[1].Trim().Substring(0, $index)
-$powerPlans += $guid
-}
+    if ($line -match '([0-9a-fA-F-]{36})') {
+        $powerPlans += $Matches[1]
+    }
 }
 
-# delete all powerplans
-foreach ($plan in $powerPlans) {
-cmd /c "powercfg /delete $plan 2>nul" | Out-Null
+# delete non-active powerplans (keep active)
+foreach ($plan in ($powerPlans | Sort-Object -Unique)) {
+    if ($plan -and $plan -ne $activeGuid) {
+        cmd /c "powercfg /delete $plan 2>nul" | Out-Null
+    }
 }
 
 # disable hibernate
