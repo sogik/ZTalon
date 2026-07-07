@@ -1,24 +1,24 @@
 import sys
 import os
 import ctypes
-import subprocess
-import logging
-import time
-import platform
-import winreg
+import subprocess
+import logging
+import time
+import platform
+import winreg
 
-from components.installer_patch import fetch_ultimate_installer, patch_installer_script
-import urllib.request
-
-from components import debloat_windows
-# Importar las nuevas utilidades
-from components.utils import (
-    setup_enhanced_logging,
-    check_admin_privileges,
-    get_secure_temp_dir,
-    get_system_info,
-)
-
+from components.installer_patch import fetch_ultimate_installer, patch_installer_script
+import urllib.request
+
+from components import debloat_windows
+# Importar las nuevas utilidades
+from components.utils import (
+    setup_enhanced_logging,
+    check_admin_privileges,
+    get_secure_temp_dir,
+    get_system_info,
+)
+
 enhanced_logger = setup_enhanced_logging("INFO")
 
 LOG_FILE = "ztalon.txt"
@@ -47,62 +47,62 @@ def show_error_popup(message, allow_continue=True):
         input("Press Enter to exit...")
         sys.exit(1)
 
-def is_console_available():
+def is_console_available():
     """Check if console is available for input"""
     try:
         # Try to get console window handle
         return ctypes.windll.kernel32.GetConsoleWindow() != 0
-    except Exception:
-        return False
+    except Exception:
+        return False
 
-def safe_input(prompt="", default=""):
-    """Safe input with timeout and sensible fallback."""
-    try:
-        if os.name != 'nt' or not is_console_available():
-            value = input(prompt)
-            return value if value else default
+def safe_input(prompt="", default=""):
+    """Safe input with timeout and sensible fallback."""
+    try:
+        if os.name != 'nt' or not is_console_available():
+            value = input(prompt)
+            return value if value else default
 
-        import msvcrt
-
-        print(prompt, end="", flush=True)
-        start_time = time.time()
-        chars = []
-
-        while True:
-            if msvcrt.kbhit():
-                char = msvcrt.getch()
-                if char in (b'\r', b'\n'):
-                    print()
-                    return ''.join(chars) if chars else default
-                if char == b'\x08':
-                    if chars:
-                        chars.pop()
-                        print('\b \b', end='', flush=True)
-                    continue
-                if char == b'\x03':
-                    raise KeyboardInterrupt
-                try:
-                    decoded = char.decode('utf-8')
-                    chars.append(decoded)
-                    print(decoded, end='', flush=True)
-                except Exception:
-                    pass
-
-            if time.time() - start_time > 30:
-                print(f"\n⏱️ Input timeout. Using default: {default}")
-                return default
-
-            time.sleep(0.1)
-    except EOFError:
-        print(f"\n⚠️ No console input available. Using default: {default}")
-        return default
-    except KeyboardInterrupt:
-        print("\n🛑 Operation cancelled by user.")
-        sys.exit(0)
-    except Exception as e:
-        print(f"\n❌ Input error: {e}. Using default: {default}")
-        return default
-
+        import msvcrt
+
+        print(prompt, end="", flush=True)
+        start_time = time.time()
+        chars = []
+
+        while True:
+            if msvcrt.kbhit():
+                char = msvcrt.getch()
+                if char in (b'\r', b'\n'):
+                    print()
+                    return ''.join(chars) if chars else default
+                if char == b'\x08':
+                    if chars:
+                        chars.pop()
+                        print('\b \b', end='', flush=True)
+                    continue
+                if char == b'\x03':
+                    raise KeyboardInterrupt
+                try:
+                    decoded = char.decode('utf-8')
+                    chars.append(decoded)
+                    print(decoded, end='', flush=True)
+                except Exception:
+                    pass
+
+            if time.time() - start_time > 30:
+                print(f"\n⏱️ Input timeout. Using default: {default}")
+                return default
+
+            time.sleep(0.1)
+    except EOFError:
+        print(f"\n⚠️ No console input available. Using default: {default}")
+        return default
+    except KeyboardInterrupt:
+        print("\n🛑 Operation cancelled by user.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n❌ Input error: {e}. Using default: {default}")
+        return default
+
 def pause_and_continue(message="Press Enter to continue..."):
     """Pauses the program until the user presses Enter (ALWAYS) with timeout"""
     print(f"\n{message}")
@@ -115,12 +115,12 @@ def pause_and_continue(message="Press Enter to continue..."):
         time.sleep(1)
         return ""
 
-def clear_screen():
+def clear_screen():
     """Clears the screen"""
     try:
         os.system('cls' if os.name == 'nt' else 'clear')
-    except Exception:
-        print("\n" * 50)  # Fallback if cls doesn't work
+    except Exception:
+        print("\n" * 50)  # Fallback if cls doesn't work
 
 def run_as_admin():
     """Relaunch the program with administrator privileges"""
@@ -163,7 +163,7 @@ def ensure_admin():
         log_and_print("Running with Administrator privileges.")
 
 
-def check_connectivity():
+def check_connectivity():
     """Check internet connectivity to required domains"""
     test_urls = [
         "https://raw.githubusercontent.com",
@@ -182,15 +182,15 @@ def check_connectivity():
             parsed_url = urlparse(url)
             if parsed_url.hostname == "github.com":
                 # Si GitHub falla es más crítico
-                show_error_popup(
-                    "Could not reach GitHub. Please check your internet connection.\n"
-                    "GitHub is required to download optimization scripts.",
-                    allow_continue=True
-                )
+                show_error_popup(
+                    "Could not reach GitHub. Please check your internet connection.\n"
+                    "GitHub is required to download optimization scripts.",
+                    allow_continue=True
+                )
 
-def check_temp_writable():
-    """Check if temp directory is writable"""
-    ztalon_dir = get_secure_temp_dir()
+def check_temp_writable():
+    """Check if temp directory is writable"""
+    ztalon_dir = get_secure_temp_dir()
     
     try:
         os.makedirs(ztalon_dir, exist_ok=True)
@@ -343,37 +343,37 @@ def show_app_install_menu():
         else:
             print("❌ Invalid option. Please choose 1 or 2.")
 
-def show_optimization_menu():
-    """Shows available optimization options"""
-    normal_optimizations = [
-        ("Driver debloat settings AMD", "Driver debloat settings AMD"),
-        ("AMD settings", "AMD settings"),
-        ("DirectX installation", "DirectX installation"),
-        ("C++ installation", "C++ installation"),
-        ("Start menu optimization", "Start menu optimization"),
-        ("Uninstall Copilot", "Copilot uninstaller"),
-        ("Uninstall Widgets", "Widgets uninstaller"),
-        ("GameBar optimization", "Gamebar optimization"),
-        ("Configure power plan", "Power plan"),
-        ("Install Timer Resolution", "Timer Resolution installation"),
-        ("Registry changes", "Registry changes"),
-        ("Lock screen optimization", "Signout lockscreen optimization"),
-        ("Uninstall Edge", "Edge uninstaller"),
-        ("Background apps optimization", "Background apps optimization"),
-        ("Autoruns optimization", "Autoruns optimization"),
-        ("Network optimization", "Network optimization"),
-        ("Disable WPBT (Platform Binary Table)", "Disable WPBT"),
-        ("Disable folder type discovery in Explorer", "Disable folder discovery")
-    ]
-
-    dangerous_optimizations = [
-        ("Spectre meltdown optimization (DANGEROUS)", "Spectre meltdown optimization"),
-        ("UAC optimization (DANGEROUS)", "UAC optimization"),
-        ("Core Isolation optimization (DANGEROUS)", "Core Isolation optimization"),
-        ("Defender optimize (DANGEROUS)", "Defender optimize"),
-    ]
-
-    optimizations = normal_optimizations + dangerous_optimizations
+def show_optimization_menu():
+    """Shows available optimization options"""
+    normal_optimizations = [
+        ("Driver debloat settings AMD", "Driver debloat settings AMD"),
+        ("AMD settings", "AMD settings"),
+        ("DirectX installation", "DirectX installation"),
+        ("C++ installation", "C++ installation"),
+        ("Start menu optimization", "Start menu optimization"),
+        ("Uninstall Copilot", "Copilot uninstaller"),
+        ("Uninstall Widgets", "Widgets uninstaller"),
+        ("GameBar optimization", "Gamebar optimization"),
+        ("Configure power plan", "Power plan"),
+        ("Install Timer Resolution", "Timer Resolution installation"),
+        ("Registry changes", "Registry changes"),
+        ("Lock screen optimization", "Signout lockscreen optimization"),
+        ("Uninstall Edge", "Edge uninstaller"),
+        ("Background apps optimization", "Background apps optimization"),
+        ("Autoruns optimization", "Autoruns optimization"),
+        ("Network optimization", "Network optimization"),
+        ("Disable WPBT (Platform Binary Table)", "Disable WPBT"),
+        ("Disable folder type discovery in Explorer", "Disable folder discovery")
+    ]
+
+    dangerous_optimizations = [
+        ("Spectre meltdown optimization (DANGEROUS)", "Spectre meltdown optimization"),
+        ("UAC optimization (DANGEROUS)", "UAC optimization"),
+        ("Core Isolation optimization (DANGEROUS)", "Core Isolation optimization"),
+        ("Defender optimize (DANGEROUS)", "Defender optimize"),
+    ]
+
+    optimizations = normal_optimizations + dangerous_optimizations
     
     clear_screen()
     print("=" * 70)
@@ -381,76 +381,76 @@ def show_optimization_menu():
     print("=" * 70)
     print()
     
-    for i, (english, _) in enumerate(normal_optimizations, 1):
-        print(f"{i:2d}. {english}")
-
-    print("---- DANGEROUS OPTIONS ----")
-    for i, (english, _) in enumerate(dangerous_optimizations, len(normal_optimizations) + 1):
-        print(f"{i:2d}. {english}")
+    for i, (english, _) in enumerate(normal_optimizations, 1):
+        print(f"{i:2d}. {english}")
+
+    print("---- DANGEROUS OPTIONS ----")
+    for i, (english, _) in enumerate(dangerous_optimizations, len(normal_optimizations) + 1):
+        print(f"{i:2d}. {english}")
     
     print()
-    print("a. All optimizations (INTERACTIVE)")
-    print("s. Select specific optimizations")
-    print("c. Cancel")
-    print()
+    print("a. All optimizations (INTERACTIVE)")
+    print("s. Select specific optimizations")
+    print("c. Cancel")
+    print()
     print("=" * 70)
     
-    return optimizations
-OPTIMIZATION_FUNCTIONS = {
-    "Driver debloat settings AMD": debloat_windows.run_driver_debloat_settings_amd,
-    "AMD settings": debloat_windows.apply_amdoptimization,
-    "DirectX installation": debloat_windows.run_directxinstallation,
-    "C++ installation": debloat_windows.run_cinstallation,
-    "Start menu optimization": debloat_windows.run_startmenuoptimization,
-    "Uninstall Copilot": debloat_windows.run_copilotuninstaller,
-    "Uninstall Widgets": debloat_windows.run_widgetsuninstaller,
-    "GameBar optimization": debloat_windows.run_gamebaroptimization,
-    "Configure power plan": debloat_windows.apply_powerplan,
-    "Install Timer Resolution": debloat_windows.install_timerresolution,
-    "Registry changes": debloat_windows.apply_registry_changes,
-    "Lock screen optimization": debloat_windows.apply_signoutlockscreen,
-    "Uninstall Edge": debloat_windows.run_edgeuninstaller,
-    "Background apps optimization": debloat_windows.run_backgroundapps,
-    "Autoruns optimization": debloat_windows.run_autoruns,
-    "Network optimization": debloat_windows.apply_networkoptimization,
-    "Disable WPBT (Platform Binary Table)": debloat_windows.disable_wpbt,
-    "Disable folder type discovery in Explorer": debloat_windows.disable_folder_discovery,
-}
-
-EXTRA_FUNCTIONS = {
-    "Spectre meltdown optimization (DANGEROUS)": debloat_windows.run_spectre_meltdown,
-    "UAC optimization (DANGEROUS)": debloat_windows.run_uac_optimization,
-    "Core Isolation optimization (DANGEROUS)": debloat_windows.run_core_isolation_optimization,
-    "Defender optimize (DANGEROUS)": debloat_windows.run_defender_optimize,
-}
-
-
-def reorder_defender_last(pipeline):
-    defender = [item for item in pipeline if "Defender optimize" in item[0]]
-    normal = [item for item in pipeline if "Defender optimize" not in item[0]]
-    return normal + defender
-
-
-def run_pipeline(pipeline, title="Summary"):
-    total_steps = len(pipeline)
-    successful = 0
-    for i, (name, func) in enumerate(pipeline, 1):
-        if run_optimization(name, func, i, total_steps):
-            successful += 1
-    print(f"\n🎯 {title}: {successful}/{total_steps} applied successfully")
-    ask_restart()
-
-
-def build_main_pipeline(include_cleanup=True):
-    pipeline = [(name, fn) for name, fn in OPTIMIZATION_FUNCTIONS.items()]
-    pipeline.extend((name, fn) for name, fn in EXTRA_FUNCTIONS.items())
-    pipeline = reorder_defender_last(pipeline)
-    if include_cleanup:
-        pipeline.append(("System final cleanup", debloat_windows.finalize_installation))
-    return pipeline
-
-
-def get_gpu_info_advanced():
+    return optimizations
+OPTIMIZATION_FUNCTIONS = {
+    "Driver debloat settings AMD": debloat_windows.run_driver_debloat_settings_amd,
+    "AMD settings": debloat_windows.apply_amdoptimization,
+    "DirectX installation": debloat_windows.run_directxinstallation,
+    "C++ installation": debloat_windows.run_cinstallation,
+    "Start menu optimization": debloat_windows.run_startmenuoptimization,
+    "Uninstall Copilot": debloat_windows.run_copilotuninstaller,
+    "Uninstall Widgets": debloat_windows.run_widgetsuninstaller,
+    "GameBar optimization": debloat_windows.run_gamebaroptimization,
+    "Configure power plan": debloat_windows.apply_powerplan,
+    "Install Timer Resolution": debloat_windows.install_timerresolution,
+    "Registry changes": debloat_windows.apply_registry_changes,
+    "Lock screen optimization": debloat_windows.apply_signoutlockscreen,
+    "Uninstall Edge": debloat_windows.run_edgeuninstaller,
+    "Background apps optimization": debloat_windows.run_backgroundapps,
+    "Autoruns optimization": debloat_windows.run_autoruns,
+    "Network optimization": debloat_windows.apply_networkoptimization,
+    "Disable WPBT (Platform Binary Table)": debloat_windows.disable_wpbt,
+    "Disable folder type discovery in Explorer": debloat_windows.disable_folder_discovery,
+}
+
+EXTRA_FUNCTIONS = {
+    "Spectre meltdown optimization (DANGEROUS)": debloat_windows.run_spectre_meltdown,
+    "UAC optimization (DANGEROUS)": debloat_windows.run_uac_optimization,
+    "Core Isolation optimization (DANGEROUS)": debloat_windows.run_core_isolation_optimization,
+    "Defender optimize (DANGEROUS)": debloat_windows.run_defender_optimize,
+}
+
+
+def reorder_defender_last(pipeline):
+    defender = [item for item in pipeline if "Defender optimize" in item[0]]
+    normal = [item for item in pipeline if "Defender optimize" not in item[0]]
+    return normal + defender
+
+
+def run_pipeline(pipeline, title="Summary"):
+    total_steps = len(pipeline)
+    successful = 0
+    for i, (name, func) in enumerate(pipeline, 1):
+        if run_optimization(name, func, i, total_steps):
+            successful += 1
+    print(f"\n🎯 {title}: {successful}/{total_steps} applied successfully")
+    ask_restart()
+
+
+def build_main_pipeline(include_cleanup=True):
+    pipeline = [(name, fn) for name, fn in OPTIMIZATION_FUNCTIONS.items()]
+    pipeline.extend((name, fn) for name, fn in EXTRA_FUNCTIONS.items())
+    pipeline = reorder_defender_last(pipeline)
+    if include_cleanup:
+        pipeline.append(("System final cleanup", debloat_windows.finalize_installation))
+    return pipeline
+
+
+def get_gpu_info_advanced():
     """Get GPU information using multiple methods"""
     try:
         gpu_info = []
@@ -498,8 +498,8 @@ def get_gpu_info_advanced():
                                     'type': gpu_type
                                 })
                                 log_and_print(f"✅ GPU detected: {name} ({gpu_type})")
-                        except Exception:
-                            continue
+                        except Exception:
+                            continue
         except Exception as e:
             log_and_print(f"⚠️ PowerShell method failed: {e}")
         
@@ -509,18 +509,18 @@ def get_gpu_info_advanced():
         log_and_print(f"❌ General error detecting GPU: {e}")
         return []
 
-def detect_gpu_type(gpu_name):
-    """Detects GPU type based on name"""
-    name_upper = gpu_name.upper()
+def detect_gpu_type(gpu_name):
+    """Detects GPU type based on name"""
+    name_upper = gpu_name.upper()
 
-    amd_keywords = ['AMD', 'RADEON', 'RX ', 'VEGA', 'NAVI', 'RDNA']
-
-    for keyword in amd_keywords:
-        if keyword in name_upper:
-            return 'AMD'
-
-    return 'Unknown'
-
+    amd_keywords = ['AMD', 'RADEON', 'RX ', 'VEGA', 'NAVI', 'RDNA']
+
+    for keyword in amd_keywords:
+        if keyword in name_upper:
+            return 'AMD'
+
+    return 'Unknown'
+
 def get_real_windows_version():
     """Gets the real Windows version"""
     try:
@@ -598,26 +598,26 @@ def get_windows_info():
         logging.error(f"Error getting Windows information: {e}")
         return None
 
-def show_system_info(windows_info, gputype):
-    """Shows detailed system information"""
-    system_info = get_system_info()
-    clear_screen()
-    print("=" * 70)
-    print("                SYSTEM INFORMATION")
-    print("=" * 70)
-    print()
-
-    if 'os' in system_info:
-        print("🖥️  Runtime OS:")
-        print(f"   Platform: {system_info['os'].get('platform', 'Unknown')}")
-        print(f"   Architecture: {system_info['os'].get('architecture', ['Unknown'])[0]}")
-        print()
-
-    if 'system' in system_info:
-        print("⚙️  Runtime Resources:")
-        print(f"   CPU Cores: {system_info['system'].get('cpu_count', 'Unknown')}")
-        print(f"   Memory: {system_info['system'].get('memory_gb', 'Unknown')} GB")
-        print()
+def show_system_info(windows_info, gputype):
+    """Shows detailed system information"""
+    system_info = get_system_info()
+    clear_screen()
+    print("=" * 70)
+    print("                SYSTEM INFORMATION")
+    print("=" * 70)
+    print()
+
+    if 'os' in system_info:
+        print("🖥️  Runtime OS:")
+        print(f"   Platform: {system_info['os'].get('platform', 'Unknown')}")
+        print(f"   Architecture: {system_info['os'].get('architecture', ['Unknown'])[0]}")
+        print()
+
+    if 'system' in system_info:
+        print("⚙️  Runtime Resources:")
+        print(f"   CPU Cores: {system_info['system'].get('cpu_count', 'Unknown')}")
+        print(f"   Memory: {system_info['system'].get('memory_gb', 'Unknown')} GB")
+        print()
     
     if windows_info:
         print(f"📟 Operating System: {windows_info['product_name']}")
@@ -636,12 +636,12 @@ def show_system_info(windows_info, gputype):
             print("   ❌ Could not detect GPU information")
         
         print(f"🎯 GPU detected for optimization: {gputype}")
-    else:
-        print("❌ Could not get system information")
-    
-    print()
-    print("=" * 70)
-    pause_and_continue()
+    else:
+        print("❌ Could not get system information")
+    
+    print()
+    print("=" * 70)
+    pause_and_continue()
 
 def run_optimization(name, func, step_num, total_steps):
     """Execute individual optimization with automatic continuation"""
@@ -680,81 +680,81 @@ def run_optimization(name, func, step_num, total_steps):
         
         # Ask user to continue only on error
         print(f"\n⚠️ An error occurred during {name}")
-        choice = safe_input("Continue with remaining optimizations? (Y/n): ", "y").lower()
+        choice = safe_input("Continue with remaining optimizations? (Y/n): ", "y").lower()
         if choice == 'n':
             show_error_popup(f"Optimization stopped due to error in {name}", allow_continue=False)
             return False
         
-        print("🔄 Continuing with remaining optimizations...")
+        print("🔄 Continuing with remaining optimizations...")
         return False
 
-def run_app_installer_simple_fixed():
-    """Executes the application installer with better error handling"""
-    try:
-        log_and_print("🚀 Starting application installer...")
-        
-        temp_dir = os.environ.get("TEMP", os.getenv("TMP", "C:\\Windows\\Temp"))
-        script_path = os.path.join(temp_dir, "appinstaller.ps1")
-        patched_content = ""
-
-        log_and_print("📥 Downloading official Ultimate installer script")
-
-        # Download the script with timeout and retries
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                installer_content = fetch_ultimate_installer(timeout=30)
-                patched_content = patch_installer_script(installer_content)
-                if patched_content:
-                    break
-                else:
-                    raise RuntimeError("Patched installer content is empty")
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    log_and_print(f"⚠️ Download attempt {attempt + 1} failed: {e}. Retrying...")
-                    time.sleep(2)
-                else:
-                    raise
-
-        if not patched_content:
-            raise RuntimeError("Patched installer content is empty")
-
-        with open(script_path, "w", encoding="utf-8") as file:
-            file.write(patched_content)
-        log_and_print("✅ Script downloaded successfully")
-
-        clear_screen()
-        print("=" * 70)
-        print("                APPLICATION INSTALLER")
-        print("=" * 70)
-        print()
-        print("🎮 Installer running in this window...")
-        print("📱 Follow the instructions that appear below.")
-        print()
-        print("=" * 70)
-        print()
-
-        # Execute directly in current window
-        result = subprocess.run([
-            "powershell",
-            "-ExecutionPolicy", "Bypass",
-            "-File", script_path
-        ], cwd=temp_dir)
-
-        print("\n" + "=" * 70)
-        if result.returncode == 0:
-            print("✅ Installer completed successfully")
-        else:
-            print(f"⚠️ Installer finished with code: {result.returncode}")
-        print("=" * 70)
-
-        log_and_print("✅ Application installer completed")
-        return True
+def run_app_installer_simple_fixed():
+    """Executes the application installer with better error handling"""
+    try:
+        log_and_print("🚀 Starting application installer...")
+        
+        temp_dir = os.environ.get("TEMP", os.getenv("TMP", "C:\\Windows\\Temp"))
+        script_path = os.path.join(temp_dir, "appinstaller.ps1")
+        patched_content = ""
+
+        log_and_print("📥 Downloading official Ultimate installer script")
+
+        # Download the script with timeout and retries
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                installer_content = fetch_ultimate_installer(timeout=30)
+                patched_content = patch_installer_script(installer_content)
+                if patched_content:
+                    break
+                else:
+                    raise RuntimeError("Patched installer content is empty")
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    log_and_print(f"⚠️ Download attempt {attempt + 1} failed: {e}. Retrying...")
+                    time.sleep(2)
+                else:
+                    raise
+
+        if not patched_content:
+            raise RuntimeError("Patched installer content is empty")
+
+        with open(script_path, "w", encoding="utf-8") as file:
+            file.write(patched_content)
+        log_and_print("✅ Script downloaded successfully")
+
+        clear_screen()
+        print("=" * 70)
+        print("                APPLICATION INSTALLER")
+        print("=" * 70)
+        print()
+        print("🎮 Installer running in this window...")
+        print("📱 Follow the instructions that appear below.")
+        print()
+        print("=" * 70)
+        print()
+
+        # Execute directly in current window
+        result = subprocess.run([
+            "powershell",
+            "-ExecutionPolicy", "Bypass",
+            "-File", script_path
+        ], cwd=temp_dir)
+
+        print("\n" + "=" * 70)
+        if result.returncode == 0:
+            print("✅ Installer completed successfully")
+        else:
+            print(f"⚠️ Installer finished with code: {result.returncode}")
+        print("=" * 70)
+
+        log_and_print("✅ Application installer completed")
+        return True
             
-    except Exception as e:
-        error_msg = f"Error in application installer: {e}"
-        log_and_print(f"❌ {error_msg}")
-        show_error_popup(error_msg, allow_continue=True)
+    except Exception as e:
+        error_msg = f"Error in application installer: {e}"
+        log_and_print(f"❌ {error_msg}")
+        show_error_popup(error_msg, allow_continue=True)
         return False
 
 def ask_restart():
@@ -922,25 +922,25 @@ def show_individual_optimization_menu(optimizations):
                 print("❌ Invalid input. Please enter numbers (1-16), 'a', 'n', 'r', or 'c'")
                 time.sleep(2)
 
-def run_selected_optimizations(selected_indices, optimizations):
-    """Execute only user-selected optimizations"""
+def run_selected_optimizations(selected_indices, optimizations):
+    """Execute only user-selected optimizations"""
     
     # Detect GPU hardware for optimization targeting
     gputype = get_gpu_info_advanced()
     log_and_print(f"🎮 Detected GPU: {gputype}")
     
-    optimization_functions = []
-    for index in sorted(selected_indices):
-        opt_name, _ = optimizations[index - 1]
-        if opt_name in OPTIMIZATION_FUNCTIONS:
-            optimization_functions.append((opt_name, OPTIMIZATION_FUNCTIONS[opt_name]))
-        elif opt_name in EXTRA_FUNCTIONS:
-            optimization_functions.append((opt_name, EXTRA_FUNCTIONS[opt_name]))
-
-    optimization_functions = reorder_defender_last(optimization_functions)
-
-    if optimization_functions and all(name in OPTIMIZATION_FUNCTIONS for name, _ in optimization_functions):
-        optimization_functions.append(("System final cleanup", debloat_windows.finalize_installation))
+    optimization_functions = []
+    for index in sorted(selected_indices):
+        opt_name, _ = optimizations[index - 1]
+        if opt_name in OPTIMIZATION_FUNCTIONS:
+            optimization_functions.append((opt_name, OPTIMIZATION_FUNCTIONS[opt_name]))
+        elif opt_name in EXTRA_FUNCTIONS:
+            optimization_functions.append((opt_name, EXTRA_FUNCTIONS[opt_name]))
+
+    optimization_functions = reorder_defender_last(optimization_functions)
+
+    if optimization_functions:
+        optimization_functions.append(("System final cleanup", debloat_windows.finalize_installation))
     
     # Display confirmation before execution
     clear_screen()
@@ -985,9 +985,9 @@ def run_selected_optimizations(selected_indices, optimizations):
     
     # Display comprehensive results
     print(f"\n{'='*70}")
-    print("              OPTIMIZATION COMPLETE")
+    print("              OPTIMIZATION COMPLETE")
     print(f"{'='*70}")
-    print("🎯 Final Summary:")
+    print("🎯 Final Summary:")
     print(f"   • Total optimizations: {total_steps}")
     print(f"   • Successful: {successful}")
     print(f"   • Failed: {failed}")
@@ -996,37 +996,37 @@ def run_selected_optimizations(selected_indices, optimizations):
     
     log_and_print(f"🎯 Optimization Summary: {successful}/{total_steps} successful, {failed} failed")
     
-    # Brief pause to review results
-    time.sleep(2)
-    ask_restart()
+    # Brief pause to review results
+    time.sleep(2)
+    ask_restart()
 
-
-def handle_optimization_flow():
-    """Handle optimization menu interactions for install/optimize modes."""
-    optimizations = show_optimization_menu()
-
-    while True:
-        opt_choice = safe_input("Choose option (a/s/c): ", "").lower()
-
-        if opt_choice == "c":
-            return False
-
-        if opt_choice == "a":
-            gputype = get_gpu_info_advanced()
-            log_and_print(f"🎮 Detected GPU: {gputype}")
-            run_pipeline(build_main_pipeline(), "Summary")
-            return True
-
-        if opt_choice == "s":
-            selected_indices = show_individual_optimization_menu(optimizations)
-            if selected_indices:
-                run_selected_optimizations(selected_indices, optimizations)
-                return True
-            continue
-
-        print("❌ Invalid option. Please choose 'a', 's' or 'c'.")
-
-def main():
+
+def handle_optimization_flow():
+    """Handle optimization menu interactions for install/optimize modes."""
+    optimizations = show_optimization_menu()
+
+    while True:
+        opt_choice = safe_input("Choose option (a/s/c): ", "").lower()
+
+        if opt_choice == "c":
+            return False
+
+        if opt_choice == "a":
+            gputype = get_gpu_info_advanced()
+            log_and_print(f"🎮 Detected GPU: {gputype}")
+            run_pipeline(build_main_pipeline(), "Summary")
+            return True
+
+        if opt_choice == "s":
+            selected_indices = show_individual_optimization_menu(optimizations)
+            if selected_indices:
+                run_selected_optimizations(selected_indices, optimizations)
+                return True
+            continue
+
+        print("❌ Invalid option. Please choose 'a', 's' or 'c'.")
+
+def main():
     """Main application entry point"""
     try:
         ensure_console()
@@ -1041,17 +1041,17 @@ def main():
         while True:
             choice = get_user_choice()
             
-            if choice == "install":
-                # Handle app installation + system optimization
-                if show_app_install_menu():
-                    if not run_app_installer_simple_fixed():
-                        show_error_popup("Application installation failed", allow_continue=True)
-                if handle_optimization_flow():
-                    return
+            if choice == "install":
+                # Handle app installation + system optimization
+                if show_app_install_menu():
+                    if not run_app_installer_simple_fixed():
+                        show_error_popup("Application installation failed", allow_continue=True)
+                if handle_optimization_flow():
+                    return
             
-            elif choice == "optimize":
-                if handle_optimization_flow():
-                    return
+            elif choice == "optimize":
+                if handle_optimization_flow():
+                    return
             
             elif choice == "info":
                 # Show detailed system information
@@ -1085,4 +1085,4 @@ if __name__ == "__main__":
         print(f"💥 Fatal error: {e}")
         import traceback
         traceback.print_exc()
-        pause_and_continue("Press Enter to exit...")
+        pause_and_continue("Press Enter to exit...")
