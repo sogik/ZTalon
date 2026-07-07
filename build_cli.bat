@@ -44,7 +44,7 @@ nuitka --onefile --standalone --remove-output ^
 
 if not exist "dist\cli\ZTalon-CLI.exe" (
     echo ERROR: Build failed! ZTalon-CLI.exe not found.
-    pause
+    if not defined GITHUB_ACTIONS pause
     exit /b 1
 )
 
