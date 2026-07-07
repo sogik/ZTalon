@@ -5,24 +5,34 @@ on:
     tags:
       - "*"
 
-jobs:
-  build_release:
-    uses: ./.github/workflows/build.yml
+permissions:
+  contents: write
 
-  create_release:
-    needs: build_release
-    runs-on: ubuntu-latest
+jobs:
+  build_and_release:
+    runs-on: windows-latest
+
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: ZTalon-exe
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build CLI with build_cli.bat
+        shell: cmd
+        run: build_cli.bat
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           files: |
-            ZTalon.exe
-            ZTalon.exe.sha256
-            ZTalon.exe.md5
+            dist/cli/ZTalon-CLI.exe
+            dist/cli/ZTalon-CLI.exe.sha256
+            dist/cli/ZTalon-CLI.exe.md5

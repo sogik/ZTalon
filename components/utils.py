@@ -17,7 +17,6 @@ import tempfile
 import hashlib
 import time
 from typing import Optional, Dict, Any, Callable
-import requests
 
 # Enhanced SSL Context Creation
 def create_ssl_context() -> ssl.SSLContext:
@@ -207,9 +206,15 @@ def get_system_info() -> Dict[str, Any]:
     Gather comprehensive system information for debugging
     """
     import platform
-    import psutil
     
     try:
+        # Try to import psutil, but don't fail if not available
+        psutil_mod = None
+        try:
+            import psutil as psutil_mod
+        except ImportError:
+            logging.debug("psutil not available, using basic system info")
+        
         info = {
             'os': {
                 'name': os.name,
@@ -225,9 +230,7 @@ def get_system_info() -> Dict[str, Any]:
                 'executable': sys.executable
             },
             'system': {
-                'cpu_count': os.cpu_count(),
-                'memory_gb': round(psutil.virtual_memory().total / (1024**3), 2),
-                'disk_free_gb': round(psutil.disk_usage('/').free / (1024**3), 2)
+                'cpu_count': os.cpu_count()
             },
             'ztalon': {
                 'admin_privileges': check_admin_privileges(),
@@ -236,18 +239,31 @@ def get_system_info() -> Dict[str, Any]:
             }
         }
         
+        # Add psutil info if available
+        if psutil_mod is not None:
+            try:
+                info['system']['memory_gb'] = round(psutil_mod.virtual_memory().total / (1024**3), 2)
+                info['system']['disk_free_gb'] = round(psutil_mod.disk_usage('/').free / (1024**3), 2)
+            except Exception as e:
+                logging.debug(f"Could not get psutil info: {e}")
+                info['system']['memory_gb'] = 'N/A'
+                info['system']['disk_free_gb'] = 'N/A'
+        else:
+            info['system']['memory_gb'] = 'N/A (psutil not installed)'
+            info['system']['disk_free_gb'] = 'N/A (psutil not installed)'
+        
         return info
         
-    except ImportError:
-        # Fallback if psutil not available
+    except Exception as e:
+        logging.error(f"Failed to gather system info: {e}")
+        # Return minimal info on error
+        import platform
         return {
             'os': {'platform': platform.platform()},
             'python': {'version': platform.python_version()},
-            'ztalon': {'admin_privileges': check_admin_privileges()}
+            'ztalon': {'admin_privileges': check_admin_privileges()},
+            'error': str(e)
         }
-    except Exception as e:
-        logging.error(f"Failed to gather system info: {e}")
-        return {'error': str(e)}
 
 # Enhanced Logger Setup
 def setup_enhanced_logging(log_level: str = "INFO") -> logging.Logger:

@@ -3,11 +3,9 @@ import ctypes
 import os
 import tempfile
 import subprocess
-import requests
-import shutil
-import time
 import logging
-import json
+
+from components.installer_patch import fetch_ultimate_installer, patch_installer_script
 
 LOG_FILE = "ztalon.txt"
 logging.basicConfig(
@@ -23,7 +21,7 @@ def log(message):
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
+    except Exception:
         return False
 
 if not is_admin():
@@ -35,18 +33,17 @@ if not is_admin():
 def run_appinstaller():
     log("Starting app installer...")
     try:
-        script_url = "https://raw.githubusercontent.com/sogik/ZTalon/refs/heads/main/src/scripts/appinstallers.ps1"
         temp_dir = tempfile.gettempdir()
         script_path = os.path.join(temp_dir, "appinstaller.ps1")
-        log(f"Attempting to download installer script from: {script_url}")
+        log("Downloading official Ultimate installer script")
         log(f"Target script path: {script_path}")
+
+        installer_content = fetch_ultimate_installer(timeout=30)
+        patched_content = patch_installer_script(installer_content)
         
-        response = requests.get(script_url)
-        log(f"Download response status code: {response.status_code}")
-        
-        with open(script_path, "wb") as file:
-            file.write(response.content)
-        log("tweak script successfully saved to disk")
+        with open(script_path, "w", encoding="utf-8") as file:
+            file.write(patched_content)
+        log("Installer script patched and saved to disk")
 
         powershell_command = f"Set-ExecutionPolicy Bypass -Scope Process -Force; & '{script_path}'"
         log(f"Executing PowerShell command: {powershell_command}")
@@ -60,10 +57,12 @@ def run_appinstaller():
         if process.returncode == 0:
             log("install completed successfully")
             log(f"Process stdout: {process.stdout}")
+            return True
         else:
             log(f"install failed with return code: {process.returncode}")
             log(f"Process stderr: {process.stderr}")
             log(f"Process stdout: {process.stdout}")
+            return False
             
     except Exception as e:
         log(f"Unexpected error during registry tweak: {str(e)}")
